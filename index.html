@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>我的首頁</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Microsoft JhengHei", Arial, sans-serif;
+      background: linear-gradient(135deg, #e0f2fe, #f8fafc);
+      color: #1f2937;
+    }
+
+    .container {
+      max-width: 900px;
+      margin: 80px auto;
+      padding: 40px 30px;
+      background: rgba(255, 255, 255, 0.8);
+      border-radius: 20px;
+      box-shadow: 0 15px 35px rgba(15, 23, 42, 0.1);
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      margin-bottom: 20px;
+      color: #0f172a;
+    }
+
+    .tag {
+      display: inline-block;
+      background: #2563eb;
+      color: white;
+      padding: 8px 16px;
+      border-radius: 999px;
+      font-size: 0.95rem;
+      margin-bottom: 20px;
+    }
+
+    .intro {
+      font-size: 1.1rem;
+      line-height: 2;
+      margin: 20px auto;
+      max-width: 700px;
+    }
+
+    .info {
+      margin-top: 30px;
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 20px;
+    }
+
+    .card {
+      background: #f8fafc;
+      border: 1px solid #dbeafe;
+      border-radius: 14px;
+      padding: 20px 25px;
+      min-width: 220px;
+    }
+
+    .card h2 {
+      font-size: 1.1rem;
+      margin: 0 0 10px;
+      color: #1d4ed8;
+    }
+
+    .card p {
+      margin: 0;
+      font-size: 1rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>你好，我是某某某</h1>
+    <div class="tag">程式設計愛好者</div>
+
+    <p class="intro">
+      大家好！我是成大南工學生，熱愛學習與創作，特別對程式設計有興趣。
+      我喜歡透過寫程式來解決問題、提升效率，並不斷挑戰自己學習新的技術。
+    </p>
+
+    <div class="info">
+      <div class="card">
+        <h2>學校</h2>
+        <p>成大南工學生</p>
+      </div>
+      <div class="card">
+        <h2>專長</h2>
+        <p>程式設計</p>
+      </div>
+      <div class="card">
+        <h2>興趣</h2>
+        <p>程式開發、學習新技術</p>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
