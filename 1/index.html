@@ -35,11 +35,29 @@
         flex-wrap: wrap;
       }
 
+      .title-wrap {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
+
       .title {
         font-size: clamp(1.7rem, 3vw, 2.5rem);
         font-weight: 900;
         color: #5d3d1f;
         letter-spacing: 2px;
+      }
+
+      .player-name {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #fff7e8;
+        background: linear-gradient(135deg, #d9485f, #a62f4f);
+        border: 3px solid #7d1e32;
+        border-radius: 12px;
+        padding: 6px 12px;
+        box-shadow: 0 4px 10px rgba(120, 28, 48, 0.28);
       }
 
       .hud {
@@ -228,7 +246,10 @@
   <body>
     <div class="game">
       <div class="topbar">
-        <div class="title">打地鼠</div>
+        <div class="title-wrap">
+          <div class="title">打地鼠</div>
+          <div class="player-name">某某某</div>
+        </div>
         <div class="hud">
           <div class="score-box">分數：<span id="score">0</span></div>
           <div class="score-box">時間：<span id="time">30</span> s</div>
