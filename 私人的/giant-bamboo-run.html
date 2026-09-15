@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Giant Bamboo Run</title>
+  <style>
+    :root { color-scheme: dark; }
+    * { box-sizing: border-box; }
+    html, body { width: 100%; height: 100%; margin: 0; }
+    body {
+      overflow: hidden;
+      display: grid;
+      place-items: center;
+      background: #081014;
+      color: #fff;
+      font-family: "Noto Serif TC", "Microsoft JhengHei", serif;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: none;
+    }
+    #game-container {
+      position: relative;
+      width: min(100vw, 640px);
+      height: 100vh;
+      max-height: 1000px;
+      overflow: hidden;
+      background: #152e22 center / cover no-repeat;
+      box-shadow: 0 0 34px rgba(0, 0, 0, .8);
+    }
+    canvas { display: block; width: 100%; height: 100%; }
+    #hud {
+      position: absolute;
+      inset: 16px 18px auto;
+      z-index: 5;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      pointer-events: none;
+      text-shadow: 2px 2px 5px #000;
+    }
+    .hud-group { display: grid; gap: 4px; }
+    #score-display { font-size: clamp(20px, 4vw, 30px); font-weight: 700; color: #f0e68c; }
+    #mode-display { color: #d6ead2; letter-spacing: 2px; font-size: 14px; }
+    #hp-bar { display: flex; gap: 8px; margin-top: 5px; }
+    .hp-dot { width: 16px; height: 16px; border: 2px solid #fff; border-radius: 50%; background: #9fd5f2; box-shadow: 0 0 8px rgba(255, 80, 80, .8); }
+    .hp-lost { background: transparent; border-color: #554052; box-shadow: none; }
+    #pause-button {
+      pointer-events: auto;
+      border: 1px solid rgba(255,255,255,.6);
+      border-radius: 8px;
+      padding: 8px 12px;
+      color: #fff;
+      background: rgba(0,0,0,.32);
+      font: inherit;
+      cursor: pointer;
+    }
+    #pause-button:hover { background: rgba(0,0,0,.55); }
+    .screen-overlay {
+      position: absolute;
+      inset: 0;
+      z-index: 10;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      text-align: center;
+      background: rgba(0, 0, 0, .68) center / cover no-repeat;
+    }
+    .screen-content { width: min(100%, 520px); padding: 22px; text-shadow: 2px 2px 8px #000; }
+    h1 { margin: 0 0 18px; color: #f0e68c; font-size: clamp(36px, 9vw, 58px); letter-spacing: 5px; }
+    p { margin: 12px 0; color: #eee; font-size: clamp(16px, 4vw, 22px); line-height: 1.6; }
+    .blink { animation: fade 1.5s infinite; margin-top: 28px; font-weight: 700; }
+    .hint { color: #d6ead2; font-size: 15px; }
+    .action { margin-top: 20px; border: 1px solid rgba(255,255,255,.65); border-radius: 8px; padding: 10px 18px; color: #fff; background: rgba(0,0,0,.4); font: inherit; cursor: pointer; }
+    .action:hover { background: rgba(0,0,0,.7); }
+    [hidden] { display: none !important; }
+    @keyframes fade { 50% { opacity: .28; } }
+  </style>
+</head>
+<body>
+  <main id="game-container">
+    <div id="hud">
+      <div class="hud-group">
+        <div id="score-display">高度: <span id="score">0</span> m</div>
+        <div id="mode-display">普通模式</div>
+        <div id="hp-bar" aria-label="生命值"><span class="hp-dot"></span><span class="hp-dot"></span><span class="hp-dot"></span></div>
+      </div>
+      <button id="pause-button" type="button">暫停</button>
+    </div>
+    <canvas id="gameCanvas" aria-label="竹林跳躍遊戲"></canvas>
+    <section id="start-screen" class="screen-overlay">
+      <div class="screen-content">
+        <h1>竹林飛躍</h1>
+        <p>最高紀錄：<span id="start-high-score">0</span> m</p>
+        <p class="hint">↑ 跳躍　空白鍵 擊飛　P / Esc 暫停　S 存檔</p>
+        <p class="blink">按任意鍵開始</p>
+      </div>
+    </section>
+    <section id="pause-screen" class="screen-overlay" hidden>
+      <div class="screen-content">
+        <h1>已暫停</h1>
+        <p>目前高度：<span id="pause-score">0</span> m</p>
+        <button class="action" id="resume-button" type="button">繼續遊戲</button>
+        <p class="hint">按 P、Esc 或 Enter 繼續</p>
+      </div>
+    </section>
+    <section id="gameover-screen" class="screen-overlay" hidden>
+      <div class="screen-content">
+        <h1>重新開始</h1>
+        <p>本次高度：<strong id="final-score">0</strong> m</p>
+        <p>最高紀錄：<span id="go-high-score">0</span> m</p>
+        <button class="action" id="restart-button" type="button">再玩一次</button>
+      </div>
+    </section>
+  </main>
+  <script>
+    const ASSETS = {
+      p_normal: 'https://i.meee.com.tw/L1WMgUk.png',
+      p_jump: 'https://i.meee.com.tw/ncU6Zw5.png',
+      p_jump2: 'https://i.meee.com.tw/UuicEAd.png',
+      p_attack: 'https://i.meee.com.tw/RGkfsns.png',
+      p_hit: 'https://i.meee.com.tw/ekF66EM.png',
+      p_dead: 'https://i.meee.com.tw/c0cR7Na.png',
+      obs_s: 'https://i.meee.com.tw/exJ04tm.png',
+      obs_m: 'https://i.meee.com.tw/yRTyMGG.png',
+      obs_b: 'https://i.meee.com.tw/Hax6R38.png',
+      obs_g: 'https://i.meee.com.tw/3fXxG29.png',
+      bg: 'https://i.meee.com.tw/XnufwjC.png',
+      bg_alt: 'https://i.meee.com.tw/239s3Av.png',
+      ui_start: 'https://i.meee.com.tw/qRal2vs.png',
+      ui_over: 'https://i.meee.com.tw/CpvfPkA.png',
+      btn_atk: '',
+      platform: 'https://i.meee.com.tw/AvxDZTf.png'
+    };
+    const images = Object.fromEntries(Object.entries(ASSETS).map(([key, src]) => {
+      const image = new Image();
+      image.src = src;
+      return [key, image];
+    }));
+    const container = document.getElementById('game-container');
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const savedGame = 'giant-bamboo-run-save';
+    let width = 0, height = 0, state = 'START', score = 0, highScore = Number(localStorage.getItem('bamboo_score') || 0);
+    let frames = 0, scrollSpeed = 5, player, platforms = [], obstacles = [], particles = [];
+
+    function resize() {
+      const ratio = window.devicePixelRatio || 1;
+      width = container.clientWidth; height = container.clientHeight;
+      canvas.width = Math.floor(width * ratio); canvas.height = Math.floor(height * ratio);
+      ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
+      if (player) player.x = width / 2 - player.w / 2;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    function drawImage(key, x, y, maxWidth, maxHeight) {
+      const image = images[key];
+      if (!image || !image.complete || !image.naturalWidth) return false;
+      const ratio = Math.min(maxWidth / image.naturalWidth, maxHeight / image.naturalHeight);
+      const drawWidth = image.naturalWidth * ratio, drawHeight = image.naturalHeight * ratio;
+      ctx.drawImage(image, x + (maxWidth - drawWidth) / 2, y + maxHeight - drawHeight, drawWidth, drawHeight);
+      return true;
+    }
+
+    class Player {
+      constructor(data = {}) {
+        this.w = 100; this.h = 100; this.x = width / 2 - this.w / 2;
+        this.y = data.y ?? height - 260; this.vy = data.vy ?? 0; this.hp = data.hp ?? 3;
+        this.jumpCount = data.jumpCount ?? 0; this.isAttacking = false; this.attackTimer = 0;
+        this.isHit = false; this.hitTimer = 0; this.isDead = false;
+      }
+      update() {
+        if (this.isDead) { this.y += 5; return; }
+        this.vy += .82; this.y += this.vy; this.x = width / 2 - this.w / 2;
+        if (this.y < 0) { this.y = 0; this.vy = 0; }
+        if (this.isAttacking && --this.attackTimer <= 0) this.isAttacking = false;
+        if (this.isHit && --this.hitTimer <= 0) this.isHit = false;
+        for (const platform of platforms) {
+          if (this.vy >= 0 && this.x + this.w > platform.x && this.x < platform.x + platform.w && this.y + this.h >= platform.y && this.y + this.h - this.vy <= platform.y + 8) {
+            this.y = platform.y - this.h; this.vy = 0; this.jumpCount = 0;
+          }
+        }
+        if (this.y > height + 40) this.takeDamage(3);
+      }
+      jump() {
+        if (this.jumpCount < 2 && !this.isDead) { this.vy = this.jumpCount ? -10 : -15; this.jumpCount++; burst(this.x + this.w / 2, this.y + this.h, '#d9f99d'); }
+      }
+      attack() { if (!this.isDead) { this.isAttacking = true; this.attackTimer = 15; } }
+      takeDamage(amount = 1) {
+        if (this.isHit || this.isDead) return;
+        this.hp -= amount; this.isHit = true; this.hitTimer = 35; updateHud();
+        if (this.hp <= 0) { this.isDead = true; endGame(); }
+      }
+      draw() {
+        const key = this.isDead ? 'p_dead' : this.isHit ? 'p_hit' : this.isAttacking ? 'p_attack' : this.vy < -2 ? (this.jumpCount > 1 ? 'p_jump2' : 'p_jump') : 'p_normal';
+        if (!drawImage(key, this.x - 10, this.y - 10, this.w + 20, this.h + 20)) {
+          ctx.fillStyle = '#d5f5b4'; ctx.fillRect(this.x, this.y, this.w, this.h);
+        }
+      }
+    }
+
+    function createPlatform(y, x = Math.random() * Math.max(1, width - 150)) { platforms.push({ x, y, w: 150, h: 24 }); }
+    function createObstacle(y) {
+      const keys = ['obs_s', 'obs_m', 'obs_b', 'obs_g'];
+      obstacles.push({ x: Math.random() * Math.max(1, width - 90), y, w: 90, h: 90, key: keys[Math.floor(Math.random() * keys.length)], dead: false });
+    }
+    function resetGame(data) {
+      score = data?.score ?? 0; frames = data?.frames ?? 0; scrollSpeed = 5 + score / 300;
+      player = new Player(data?.player); platforms = []; obstacles = []; particles = [];
+      createPlatform(height - 150, width / 2 - 75);
+      for (let y = height - 330; y > -height; y -= 145) { createPlatform(y); if (Math.random() > .25) createObstacle(y - 95); }
+      updateHud();
+    }
+    function update() {
+      if (state !== 'PLAYING') return;
+      frames++; scrollSpeed = Math.min(11, 5 + score / 400); player.update();
+      if (player.y < height * .42) { const move = height * .42 - player.y; player.y = height * .42; platforms.forEach(p => p.y += move); obstacles.forEach(o => o.y += move); score += move / 10; }
+      platforms.forEach(p => p.y += scrollSpeed); obstacles.forEach(o => o.y += scrollSpeed);
+      platforms = platforms.filter(p => p.y < height + 50); obstacles = obstacles.filter(o => o.y < height + 100 && !o.dead);
+      const top = platforms.reduce((lowest, p) => Math.min(lowest, p.y), height);
+      if (top > -100) { createPlatform(top - 145); if (Math.random() > .2) createObstacle(top - 240); }
+      for (const obstacle of obstacles) {
+        if (overlap(player, obstacle)) {
+          if (player.isAttacking) { obstacle.dead = true; burst(obstacle.x + obstacle.w / 2, obstacle.y + obstacle.h / 2, '#f8d26a'); }
+          else player.takeDamage(1);
+        }
+      }
+      particles.forEach(p => { p.x += p.vx; p.y += p.vy; p.vy += .08; p.life--; }); particles = particles.filter(p => p.life > 0);
+      updateHud();
+    }
+    function draw() {
+      ctx.clearRect(0, 0, width, height);
+      platforms.forEach(p => drawImage('platform', p.x, p.y, p.w, p.h) || (ctx.fillStyle = '#8bbf61', ctx.fillRect(p.x, p.y, p.w, p.h)));
+      obstacles.forEach(o => drawImage(o.key, o.x, o.y, o.w, o.h)); player?.draw();
+      particles.forEach(p => { ctx.globalAlpha = Math.max(0, p.life / 30); ctx.fillStyle = p.color; ctx.fillRect(p.x, p.y, 5, 5); }); ctx.globalAlpha = 1;
+    }
+    function loop() { update(); draw(); requestAnimationFrame(loop); }
+    function overlap(a, b) { return a.x + 20 < b.x + b.w - 15 && a.x + a.w - 20 > b.x + 15 && a.y + 20 < b.y + b.h && a.y + a.h > b.y + 15; }
+    function burst(x, y, color) { for (let i = 0; i < 10; i++) particles.push({ x, y, vx: (Math.random() - .5) * 5, vy: (Math.random() - .5) * 5, life: 30, color }); }
+    function updateHud() {
+      document.getElementById('score').textContent = Math.floor(score); document.getElementById('pause-score').textContent = Math.floor(score);
+      document.querySelectorAll('.hp-dot').forEach((dot, index) => dot.classList.toggle('hp-lost', index >= (player?.hp ?? 3)));
+    }
+    function show(id, visible) { document.getElementById(id).hidden = !visible; }
+    function startGame() { resetGame(); state = 'PLAYING'; show('start-screen', false); show('gameover-screen', false); show('pause-screen', false); }
+    function togglePause() {
+      if (state === 'PLAYING') { state = 'PAUSED'; saveGame(); show('pause-screen', true); }
+      else if (state === 'PAUSED') { state = 'PLAYING'; show('pause-screen', false); }
+    }
+    function saveGame() {
+      if (!player || state === 'START' || state === 'GAMEOVER') return;
+      localStorage.setItem(savedGame, JSON.stringify({ score, frames, player: { y: player.y, vy: player.vy, hp: player.hp, jumpCount: player.jumpCount } }));
+      document.getElementById('mode-display').textContent = '進度已儲存';
+      setTimeout(() => { if (state === 'PLAYING') document.getElementById('mode-display').textContent = '普通模式'; }, 1200);
+    }
+    function endGame() {
+      state = 'GAMEOVER'; highScore = Math.max(highScore, Math.floor(score)); localStorage.setItem('bamboo_score', highScore);
+      document.getElementById('final-score').textContent = Math.floor(score); document.getElementById('go-high-score').textContent = highScore; show('gameover-screen', true); localStorage.removeItem(savedGame);
+    }
+    function restoreOrStart() {
+      const raw = localStorage.getItem(savedGame);
+      if (raw) { try { resetGame(JSON.parse(raw)); state = 'PAUSED'; show('start-screen', false); show('pause-screen', true); return; } catch { localStorage.removeItem(savedGame); } }
+      resetGame();
+    }
+    document.addEventListener('keydown', event => {
+      if (event.code === 'Space' || event.code === 'ArrowUp') event.preventDefault();
+      if (state === 'START') { startGame(); return; }
+      if (state === 'GAMEOVER') { if (event.code === 'Enter' || event.code === 'Space') startGame(); return; }
+      if (event.code === 'KeyP' || event.code === 'Escape' || (state === 'PAUSED' && event.code === 'Enter')) { togglePause(); return; }
+      if (state !== 'PLAYING') return;
+      if (event.code === 'ArrowUp') player.jump(); if (event.code === 'Space') player.attack(); if (event.code === 'KeyS') saveGame();
+    });
+    document.getElementById('pause-button').addEventListener('click', togglePause);
+    document.getElementById('resume-button').addEventListener('click', togglePause);
+    document.getElementById('restart-button').addEventListener('click', startGame);
+    images.bg.addEventListener('load', () => container.style.backgroundImage = `url(${ASSETS.bg})`);
+    images.ui_start.addEventListener('load', () => document.getElementById('start-screen').style.backgroundImage = `url(${ASSETS.ui_start})`);
+    images.ui_over.addEventListener('load', () => document.getElementById('gameover-screen').style.backgroundImage = `url(${ASSETS.ui_over})`);
+    document.getElementById('start-high-score').textContent = highScore;
+    restoreOrStart(); loop();
+  </script>
+</body>
+</html>
