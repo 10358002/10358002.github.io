@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>藝術時代 - 畫派與畫家介紹</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: "Microsoft JhengHei", "微軟正黑體", Arial, sans-serif;
+      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+      color: #e2e8f0;
+      line-height: 1.6;
+    }
+
+    header {
+      background: linear-gradient(135deg, #1e40af 0%, #0c4a6e 100%);
+      padding: 60px 20px;
+      text-align: center;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    }
+
+    header h1 {
+      font-size: 3rem;
+      margin-bottom: 15px;
+      color: #fbbf24;
+      text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    .subtitle {
+      font-size: 1.3rem;
+      color: #cbd5e1;
+      font-style: italic;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 40px 20px;
+    }
+
+    .nav {
+      display: flex;
+      justify-content: center;
+      gap: 15px;
+      flex-wrap: wrap;
+      margin-bottom: 40px;
+      margin-top: -20px;
+    }
+
+    .nav button {
+      background: #0f172a;
+      border: 2px solid #3b82f6;
+      color: #fbbf24;
+      padding: 12px 24px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 1rem;
+      font-weight: bold;
+      transition: all 0.3s ease;
+    }
+
+    .nav button:hover,
+    .nav button.active {
+      background: #3b82f6;
+      color: white;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4);
+    }
+
+    .era-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+      gap: 30px;
+      margin-bottom: 40px;
+    }
+
+    .era-card {
+      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+      border-left: 5px solid #3b82f6;
+      border-radius: 12px;
+      padding: 30px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+
+    .era-card:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 15px 40px rgba(59, 130, 246, 0.2);
+      border-left-color: #fbbf24;
+    }
+
+    .era-card h2 {
+      color: #fbbf24;
+      font-size: 1.8rem;
+      margin-bottom: 10px;
+    }
+
+    .era-period {
+      color: #94a3b8;
+      font-size: 0.95rem;
+      margin-bottom: 20px;
+      font-style: italic;
+    }
+
+    .era-description {
+      color: #cbd5e1;
+      margin-bottom: 20px;
+      line-height: 1.8;
+    }
+
+    .painters {
+      background: rgba(30, 41, 59, 0.6);
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 15px;
+    }
+
+    .painters-label {
+      color: #60a5fa;
+      font-weight: bold;
+      margin-bottom: 10px;
+      font-size: 0.95rem;
+    }
+
+    .painter-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .painter {
+      background: #3b82f6;
+      color: white;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 0.9rem;
+    }
+
+    .painter:hover {
+      background: #fbbf24;
+      color: #0f172a;
+    }
+
+    .artwork {
+      background: rgba(30, 41, 59, 0.6);
+      border-radius: 8px;
+      padding: 15px;
+    }
+
+    .artwork-label {
+      color: #60a5fa;
+      font-weight: bold;
+      margin-bottom: 10px;
+      font-size: 0.95rem;
+    }
+
+    .artwork-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .artwork-item {
+      background: #10b981;
+      color: white;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 0.9rem;
+    }
+
+    .artwork-item:hover {
+      background: #059669;
+    }
+
+    footer {
+      text-align: center;
+      padding: 30px 20px;
+      border-top: 1px solid #334155;
+      color: #94a3b8;
+      margin-top: 40px;
+    }
+
+    @media (max-width: 768px) {
+      header h1 {
+        font-size: 2rem;
+      }
+
+      .subtitle {
+        font-size: 1rem;
+      }
+
+      .era-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .nav {
+        gap: 10px;
+      }
+
+      .nav button {
+        padding: 10px 16px;
+        font-size: 0.9rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>🎨 藝術時代</h1>
+    <p class="subtitle">探索歷史畫派與大師們的創意世界</p>
+  </header>
+
+  <div class="container">
+    <div class="nav">
+      <button class="active" onclick="showAllEras()">全部</button>
+      <button onclick="filterEra('古代')">古代</button>
+      <button onclick="filterEra('近代')">近代</button>
+      <button onclick="filterEra('現代')">現代</button>
+      <button onclick="filterEra('當代')">當代</button>
+    </div>
+
+    <div class="era-grid" id="eraGrid">
+      <!-- 古代 -->
+      <div class="era-card" data-era="古代">
+        <h2>🏛️ 古代藝術</h2>
+        <p class="era-period">公元前3000年 - 西元5世紀</p>
+        <p class="era-description">
+          古代藝術主要包括埃及、希臘和羅馬的藝術傳統。這個時期強調人體美與數學比例，奠定了西方藝術的基礎。
+        </p>
+        <div class="painters">
+          <div class="painters-label">著名藝術家：</div>
+          <div class="painter-list">
+            <span class="painter">菲狄亞斯（古希臘雕塑家）</span>
+            <span class="painter">普拉克西特列斯（古希臘雕塑家）</span>
+            <span class="painter">波里克萊塔斯（古希臘雕塑家）</span>
+          </div>
+        </div>
+        <div class="artwork">
+          <div class="artwork-label">代表作品：</div>
+          <div class="artwork-list">
+            <span class="artwork-item">雅典娜帕提農神像</span>
+            <span class="artwork-item">維納斯雕像</span>
+            <span class="artwork-item">古埃及金字塔藝術</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 中世紀 -->
+      <div class="era-card" data-era="古代">
+        <h2>⛪ 中世紀藝術</h2>
+        <p class="era-period">西元5世紀 - 15世紀</p>
+        <p class="era-description">
+          以宗教主題為核心，強調拜占庭風格與哥德式建築。藝術服務於教會，具有莊嚴、神聖的特色。
+        </p>
+        <div class="painters">
+          <div class="painters-label">著名藝術家：</div>
+          <div class="painter-list">
+            <span class="painter">喬托（Giotto）</span>
+            <span class="painter">杜喬（Duccio）</span>
+            <span class="painter">西蒙內·馬蒂尼</span>
+          </div>
+        </div>
+        <div class="artwork">
+          <div class="artwork-label">代表作品：</div>
+          <div class="artwork-list">
+            <span class="artwork-item">聖母領報</span>
+            <span class="artwork-item">人間喜劇壁畫</span>
+            <span class="artwork-item">馬耶斯塔祭壇畫</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 文藝復興 -->
+      <div class="era-card" data-era="近代">
+        <h2>👑 文藝復興</h2>
+        <p class="era-period">14世紀 - 16世紀</p>
+        <p class="era-description">
+          人文主義精神重燃，藝術家重新發現古代經典。透視法、解剖學研究使繪畫更加逼真，產生了歷史上最偉大的藝術大師。
+        </p>
+        <div class="painters">
+          <div class="painters-label">著名藝術家：</div>
+          <div class="painter-list">
+            <span class="painter">李奧納多·達文西</span>
+            <span class="painter">米開朗基羅</span>
+            <span class="painter">拉斐爾</span>
+            <span class="painter">波提切利</span>
+          </div>
+        </div>
+        <div class="artwork">
+          <div class="artwork-label">代表作品：</div>
+          <div class="artwork-list">
+            <span class="artwork-item">蒙娜麗莎</span>
+            <span class="artwork-item">大衛雕像</span>
+            <span class="artwork-item">創世紀</span>
+            <span class="artwork-item">維納斯的誕生</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 巴洛克 -->
+      <div class="era-card" data-era="近代">
+        <h2>🎭 巴洛克</h2>
+        <p class="era-period">16世紀末 - 18世紀初</p>
+        <p class="era-description">
+          戲劇性、動感、光影對比鮮明。強調情感表達與宗教虔誠，色彩豐富、構圖複雜，充滿戲劇張力。
+        </p>
+        <div class="painters">
+          <div class="painters-label">著名藝術家：</div>
+          <div class="painter-list">
+            <span class="painter">卡拉瓦喬</span>
+            <span class="painter">魯本斯</span>
+            <span class="painter">林布蘭特</span>
+            <span class="painter">委拉茲開茲</span>
+          </div>
+        </div>
+        <div class="artwork">
+          <div class="artwork-label">代表作品：</div>
+          <div class="artwork-list">
+            <span class="artwork-item">聖馬太被召</span>
+            <span class="artwork-item">夜間巡邏</span>
+            <span class="artwork-item">宮娥</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 新古典主義 -->
+      <div class="era-card" data-era="近代">
+        <h2>🏛️ 新古典主義</h2>
+        <p class="era-period">18世紀中期 - 19世紀初</p>
+        <p class="era-description">
+          回歸古典美學，強調理性、秩序與高尚道德。線條明確，構圖嚴謹，色彩相對沉著。
+        </p>
+        <div class="painters">
+          <div class="painters-label">著名藝術家：</div>
+          <div class="painter-list">
+            <span class="painter">雅克-路易·大衛</span>
+            <span class="painter">讓-奧古斯特-多米尼克·安格爾</span>
+          </div>
+        </div>
+        <div class="artwork">
+          <div class="artwork-label">代表作品：</div>
+          <div class="artwork-list">
+            <span class="artwork-item">馬拉之死</span>
+            <span class="artwork-item">拿破崙跨越阿爾卑斯山</span>
+            <span class="artwork-item">大宮女</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 浪漫主義 -->
+      <div class="era-card" data-era="近代">
+        <h2>🌊 浪漫主義</h2>
+        <p class="era-period">18世紀末 - 19世紀中期</p>
+        <p class="era-description">
+          強調情感、想像與自然。色彩鮮豔，筆觸粗放，主題多為景觀、歷史或傳奇故事。
+        </p>
+        <div class="painters">
+          <div class="painters-label">著名藝術家：</div>
+          <div class="painter-list">
+            <span class="painter">特奧多爾·傑利柯</span>
+            <span class="painter">歐仁·德拉克洛瓦</span>
+            <span class="painter">威廉·透納</span>
+            <span class="painter">卡斯帕·大衛·弗里德里希</span>
+          </div>
+        </div>
+        <div class="artwork">
+          <div class="artwork-label">代表作品：</div>
+          <div class="artwork-list">
+            <span class="artwork-item">梅杜薩之筏</span>
+            <span class="artwork-item">自由領導人民</span>
+            <span class="artwork-item">雨、蒸汽和速度</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 現實主義 -->
+      <div class="era-card" data-era="現代">
+        <h2>🌾 現實主義</h2>
+        <p class="era-period">19世紀中期</p>
+        <p class="era-description">
+          描繪現實生活場景，反對浪漫主義理想化。關注社會底層和日常生活，強調客觀描繪。
+        </p>
+        <div class="painters">
+          <div class="painters-label">著名藝術家：</div>
+          <div class="painter-list">
+            <span class="painter">居斯塔夫·庫爾貝</span>
+            <span class="painter">讓-弗朗索瓦·米勒</span>
+            <span class="painter">杜米埃</span>
+          </div>
+        </div>
+        <div class="artwork">
+          <div class="artwork-label">代表作品：</div>
+          <div class="artwork-list">
+            <span class="artwork-item">石工</span>
+            <span class="artwork-item">晚禱</span>
+            <span class="artwork-item">世界的起源</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 印象主義 -->
+      <div class="era-card" data-era="現代">
+        <h2>☀️ 印象主義</h2>
+        <p class="era-period">1870年代 - 1880年代</p>
+        <p class="era-description">
+          強調光線與色彩的瞬間印象。戶外寫生，快速筆觸，捕捉光影變化，開啟現代藝術新紀元。
+        </p>
+        <div class="painters">
+          <div class="painters-label">著名藝術家：</div>
+          <div class="painter-list">
+            <span class="painter">克勞德·莫內</span>
+            <span class="painter">皮埃爾-奧古斯特·雷諾阿</span>
+            <span class="painter">埃德加·竇加</span>
+            <span class="painter">貝特·莫里索</span>
+          </div>
+        </div>
+        <div class="artwork">
+          <div class="artwork-label">代表作品：</div>
+          <div class="artwork-list">
+            <span class="artwork-item">睡蓮池</span>
+            <span class="artwork-item">日出·印象</span>
+            <span class="artwork-item">舞蹈課</span>
+            <span class="artwork-item">煎餅磨坊舞會</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 後印象主義 -->
+      <div class="era-card" data-era="現代">
+        <h2>🌻 後印象主義</h2>
+        <p class="era-period">1880年代 - 1900年代</p>
+        <p class="era-description">
+          超越印象主義，強調形式、結構與主觀表達。色彩大膽，追求藝術本質，為現代藝術奠基。
+        </p>
+        <div class="painters">
+          <div class="painters-label">著名藝術家：</div>
+          <div class="painter-list">
+            <span class="painter">文森·梵高</span>
+            <span class="painter">保羅·塞尚</span>
+            <span class="painter">保羅·高更</span>
+            <span class="painter">喬治·修拉</span>
+          </div>
+        </div>
+        <div class="artwork">
+          <div class="artwork-label">代表作品：</div>
+          <div class="artwork-list">
+            <span class="artwork-item">星月夜</span>
+            <span class="artwork-item">聖勝利山</span>
+            <span class="artwork-item">我們從何處來？我們是誰？我們向何處去？</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 象徵主義 -->
+      <div class="era-card" data-era="現代">
+        <h2>🔮 象徵主義</h2>
+        <p class="era-period">1880年代 - 1910年代</p>
+        <p class="era-description">
+          強調象徵、暗示與夢幻氛圍。反對寫實，追求精神層面的表達，色彩詭譎神秘。
+        </p>
+        <div class="painters">
+          <div class="painters-label">著名藝術家：</div>
+          <div class="painter-list">
+            <span class="painter">古斯塔夫·莫羅</span>
+            <span class="painter">杜諾瓦</span>
+            <span class="painter">愛德華·蒙克</span>
+          </div>
+        </div>
+        <div class="artwork">
+          <div class="artwork-label">代表作品：</div>
+          <div class="artwork-list">
+            <span class="artwork-item">一角獸</span>
+            <span class="artwork-item">吶喊</span>
+            <span class="artwork-item">被折斷的弦</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 立體派 -->
+      <div class="era-card" data-era="現代">
+        <h2>🔷 立體派</h2>
+        <p class="era-period">1907年 - 1914年</p>
+        <p class="era-description">
+          打破透視法的束縛，從多個角度同時描繪物體。幾何化形式，推動抽象藝術的誕生。
+        </p>
+        <div class="painters">
+          <div class="painters-label">著名藝術家：</div>
+          <div class="painter-list">
+            <span class="painter">巴勃羅·畢卡索</span>
+            <span class="painter">喬治·布拉克</span>
+            <span class="painter">胡安·格里斯</span>
+          </div>
+        </div>
+        <div class="artwork">
+          <div class="artwork-label">代表作品：</div>
+          <div class="artwork-list">
+            <span class="artwork-item">亞維儂少女</span>
+            <span class="artwork-item">三個音樂家</span>
+            <span class="artwork-item">靜物和吉他</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 表現主義 -->
+      <div class="era-card" data-era="當代">
+        <h2>😢 表現主義</h2>
+        <p class="era-period">1905年 - 1925年</p>
+        <p class="era-description">
+          歪曲現實以表達內心感受。色彩猛烈，線條粗粗，強調情感與心理狀態。
+        </p>
+        <div class="painters">
+          <div class="painters-label">著名藝術家：</div>
+          <div class="painter-list">
+            <span class="painter">恩斯特·路德維希·基希納</span>
+            <span class="painter">埃米爾·諾爾德</span>
+            <span class="painter">埃貢·席勒</span>
+          </div>
+        </div>
+        <div class="artwork">
+          <div class="artwork-label">代表作品：</div>
+          <div class="artwork-list">
+            <span class="artwork-item">柏林街道</span>
+            <span class="artwork-item">暴雨</span>
+            <span class="artwork-item">自畫像</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 超現實主義 -->
+      <div class="era-card" data-era="當代">
+        <h2>💭 超現實主義</h2>
+        <p class="era-period">1924年 - 1950年代</p>
+        <p class="era-description">
+          探索潛意識與夢境。超越邏輯的意象組合，釋放想像力，挑戰理性。
+        </p>
+        <div class="painters">
+          <div class="painters-label">著名藝術家：</div>
+          <div class="painter-list">
+            <span class="painter">薩爾瓦多·達利</span>
+            <span class="painter">馬克斯·恩斯特</span>
+            <span class="painter">胡安·米羅</span>
+            <span class="painter">安德烈·馬松</span>
+          </div>
+        </div>
+        <div class="artwork">
+          <div class="artwork-label">代表作品：</div>
+          <div class="artwork-list">
+            <span class="artwork-item">記憶的執著</span>
+            <span class="artwork-item">夢遊者的街道</span>
+            <span class="artwork-item">出生</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 抽象表現主義 -->
+      <div class="era-card" data-era="當代">
+        <h2>🎨 抽象表現主義</h2>
+        <p class="era-period">1940年代 - 1950年代</p>
+        <p class="era-description">
+          完全放棄具象形式，強調筆觸與色彩的表現力。自發性、動態感，關注創作過程本身。
+        </p>
+        <div class="painters">
+          <div class="painters-label">著名藝術家：</div>
+          <div class="painter-list">
+            <span class="painter">傑克遜·波洛克</span>
+            <span class="painter">馬克·羅斯科</span>
+            <span class="painter">威廉·德庫寧</span>
+            <span class="painter">克利福德·斯蒂爾</span>
+          </div>
+        </div>
+        <div class="artwork">
+          <div class="artwork-label">代表作品：</div>
+          <div class="artwork-list">
+            <span class="artwork-item">1號（藍色）</span>
+            <span class="artwork-item">無題（橙色和黃色）</span>
+            <span class="artwork-item">挖掘</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 波普藝術 -->
+      <div class="era-card" data-era="當代">
+        <h2>🌟 波普藝術</h2>
+        <p class="era-period">1950年代 - 1960年代</p>
+        <p class="era-description">
+          融合大眾文化與美術。鮮明色彩、重複圖像、商業符號成為藝術主題，消解高雅與通俗的邊界。
+        </p>
+        <div class="painters">
+          <div class="painters-label">著名藝術家：</div>
+          <div class="painter-list">
+            <span class="painter">安迪·沃荷</span>
+            <span class="painter">羅伊·李奇特斯坦</span>
+            <span class="painter">湯姆·韋塞爾曼</span>
+            <span class="painter">克拉斯·歐登伯格</span>
+          </div>
+        </div>
+        <div class="artwork">
+          <div class="artwork-label">代表作品：</div>
+          <div class="artwork-list">
+            <span class="artwork-item">瑪麗蓮·夢露</span>
+            <span class="artwork-item">吻</span>
+            <span class="artwork-item">坎貝爾濃湯罐</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 極簡主義 -->
+      <div class="era-card" data-era="當代">
+        <h2>▢ 極簡主義</h2>
+        <p class="era-period">1960年代 - 1970年代</p>
+        <p class="era-description">
+          反對修飾，追求簡潔與本質。幾何形式、單一色彩、客觀性，強調藝術本身。
+        </p>
+        <div class="painters">
+          <div class="painters-label">著名藝術家：</div>
+          <div class="painter-list">
+            <span class="painter">卡爾·安德烈</span>
+            <span class="painter">丹·弗拉文</span>
+            <span class="painter">唐納德·賈德</span>
+          </div>
+        </div>
+        <div class="artwork">
+          <div class="artwork-label">代表作品：</div>
+          <div class="artwork-list">
+            <span class="artwork-item">無題（鋼板）</span>
+            <span class="artwork-item">無題（綠色和黃色）</span>
+            <span class="artwork-item">方形盒子</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 當代藝術 -->
+      <div class="era-card" data-era="當代">
+        <h2>🌐 當代藝術</h2>
+        <p class="era-period">1980年代至今</p>
+        <p class="era-description">
+          多元、包容、跨界。融合傳統與新技術，反思社會議題，形式豐富多變，無統一風格。
+        </p>
+        <div class="painters">
+          <div class="painters-label">著名藝術家：</div>
+          <div class="painter-list">
+            <span class="painter">巴斯奇亞</span>
+            <span class="painter">班克西</span>
+            <span class="painter">村上隆</span>
+            <span class="painter">AI魏茨</span>
+          </div>
+        </div>
+        <div class="artwork">
+          <div class="artwork-label">代表作品：</div>
+          <div class="artwork-list">
+            <span class="artwork-item">無題（繪畫）</span>
+            <span class="artwork-item">藝術為藝術</span>
+            <span class="artwork-item">彩虹花</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    <p>
+      🎨 探索藝術歷史，感受大師的創意與靈感。不同時代、不同畫派、不同風格，共同組成了豐富多彩的人類文明瑰寶。
+    </p>
+    <p style="margin-top: 15px; color: #64748b;">
+      © 2024 藝術時代 | 設計用於藝術愛好者
+    </p>
+  </footer>
+
+  <script>
+    function showAllEras() {
+      const cards = document.querySelectorAll(".era-card");
+      cards.forEach((card) => {
+        card.style.display = "block";
+      });
+
+      const buttons = document.querySelectorAll(".nav button");
+      buttons.forEach((btn) => btn.classList.remove("active"));
+      event.target.classList.add("active");
+    }
+
+    function filterEra(era) {
+      const cards = document.querySelectorAll(".era-card");
+      cards.forEach((card) => {
+        if (card.dataset.era === era) {
+          card.style.display = "block";
+        } else {
+          card.style.display = "none";
+        }
+      });
+
+      const buttons = document.querySelectorAll(".nav button");
+      buttons.forEach((btn) => btn.classList.remove("active"));
+      event.target.classList.add("active");
+    }
+  </script>
+</body>
+</html>
