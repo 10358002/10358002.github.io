@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>工程計算機 | 某某某</title>
+  <style>
+    :root {
+      --pink-100: #fff3f6;
+      --pink-200: #f8dce5;
+      --pink-300: #e9b7c7;
+      --pink-500: #c37e99;
+      --pink-700: #86495f;
+      --ink: #352830;
+      --screen: #dff7f5;
+      --cream: #fff8ef;
+      --shadow: 0 18px 35px rgba(91, 49, 66, .22), inset 0 2px 0 rgba(255,255,255,.8);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      overflow-x: hidden;
+      color: var(--ink);
+      font-family: "Trebuchet MS", "Microsoft JhengHei", sans-serif;
+      background:
+        radial-gradient(circle at 16% 12%, rgba(255,255,255,.9) 0 4%, transparent 5%),
+        radial-gradient(circle at 82% 76%, rgba(255,255,255,.72) 0 3%, transparent 4%),
+        linear-gradient(135deg, #f8e9ed, #f7cbd9 52%, #d9b8e5);
+    }
+
+    .nickname {
+      position: fixed;
+      top: 22px;
+      left: 26px;
+      z-index: 5;
+      padding: 9px 16px;
+      border: 2px solid rgba(134,73,95,.18);
+      border-radius: 999px;
+      color: var(--pink-700);
+      background: rgba(255,255,255,.66);
+      box-shadow: 0 5px 16px rgba(134,73,95,.12);
+      font-size: 16px;
+      font-weight: 800;
+      letter-spacing: 2px;
+    }
+
+    .workbench {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: clamp(24px, 6vw, 72px);
+      width: min(100%, 1050px);
+      padding: 76px 28px 30px;
+    }
+
+    .calculator {
+      width: min(100%, 490px);
+      padding: 24px 24px 28px;
+      border: 7px solid #d59bad;
+      border-radius: 39px;
+      background: linear-gradient(145deg, #f9dfe7, #cf98ac 54%, #e8bdc9);
+      box-shadow: var(--shadow), 0 0 0 2px rgba(255,255,255,.42);
+    }
+
+    .brand-row { display: flex; justify-content: space-between; align-items: end; margin: 0 12px 15px; }
+    .brand { color: white; font-size: clamp(21px, 3vw, 29px); font-weight: 900; letter-spacing: 1px; text-shadow: 0 2px 2px #ba8497; }
+    .model { color: #80566a; font-size: 12px; font-weight: 800; text-align: right; letter-spacing: .5px; }
+    .screen-wrap { padding: 9px; border-radius: 13px; background: #ad7e8e; box-shadow: inset 0 2px 5px rgba(75,35,50,.35); }
+    .screen {
+      min-height: 112px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      padding: 13px 15px 10px;
+      overflow: hidden;
+      border: 2px solid #91c5c4;
+      border-radius: 8px;
+      background: var(--screen);
+      color: #182e2f;
+      font-family: "Courier New", monospace;
+      box-shadow: inset 0 1px 5px rgba(67,125,123,.24);
+    }
+    .screen-meta { display: flex; justify-content: space-between; font-size: 12px; font-family: inherit; }
+    .screen-value { min-height: 48px; display: flex; align-items: end; justify-content: end; font-size: clamp(25px, 5vw, 38px); letter-spacing: -2px; white-space: nowrap; }
+
+    .mode-row { display: flex; justify-content: space-between; align-items: center; margin: 15px 2px 8px; color: #85576b; font-size: 12px; font-weight: 800; }
+    .toggle { display: flex; gap: 4px; padding: 3px; border-radius: 999px; background: rgba(255,255,255,.42); }
+    .toggle button { border: 0; border-radius: 999px; padding: 5px 10px; color: #8e6474; background: transparent; font: inherit; cursor: pointer; }
+    .toggle button.active { color: white; background: var(--pink-700); box-shadow: 0 2px 5px rgba(74,31,49,.25); }
+
+    .keys { display: grid; grid-template-columns: repeat(5, 1fr); gap: 9px; }
+    button.key {
+      min-height: 48px;
+      border: 0;
+      border-radius: 12px;
+      color: #633b4e;
+      background: linear-gradient(145deg, #fff1f3, #ca91a5);
+      box-shadow: 0 4px 0 #a66d82, inset 0 2px 2px rgba(255,255,255,.8);
+      font: 700 15px "Trebuchet MS", "Microsoft JhengHei", sans-serif;
+      cursor: pointer;
+      transition: transform .1s ease, box-shadow .1s ease, filter .1s ease;
+    }
+    button.key:hover { filter: brightness(1.06); }
+    button.key:active { transform: translateY(3px); box-shadow: 0 1px 0 #a66d82, inset 0 2px 2px rgba(255,255,255,.75); }
+    button.key.function { color: #7a5264; background: linear-gradient(145deg, #fffaf0, #e6c0a4); box-shadow: 0 4px 0 #b58d78, inset 0 2px 2px rgba(255,255,255,.85); }
+    button.key.operator { color: white; background: linear-gradient(145deg, #cd91a6, #94536d); box-shadow: 0 4px 0 #754156, inset 0 2px 2px rgba(255,255,255,.35); }
+    button.key.equals { color: white; background: linear-gradient(145deg, #9c6eaa, #694477); box-shadow: 0 4px 0 #50345c, inset 0 2px 2px rgba(255,255,255,.35); }
+    button.key.wide { grid-column: span 2; }
+
+    .mascot-zone { position: relative; width: min(37vw, 340px); min-width: 245px; height: 390px; display: grid; place-items: center; }
+    .sparkle { position: absolute; color: white; font-size: 28px; animation: twinkle 2.2s infinite ease-in-out; }
+    .sparkle.one { top: 15px; left: 23%; }
+    .sparkle.two { right: 5%; top: 30%; animation-delay: .6s; font-size: 19px; }
+    .sparkle.three { bottom: 16%; left: 7%; animation-delay: 1s; font-size: 16px; }
+    .mascot { position: relative; width: 210px; height: 260px; filter: drop-shadow(0 15px 8px rgba(104,57,78,.18)); animation: float 3.5s ease-in-out infinite; }
+    .ear { position: absolute; top: 30px; width: 66px; height: 82px; border: 5px solid #75465d; border-radius: 50% 50% 43% 43%; background: #f5bdce; }
+    .ear::after { content: ""; position: absolute; inset: 13px; border-radius: inherit; background: #d886a4; }
+    .ear.left { left: 7px; transform: rotate(-26deg); } .ear.right { right: 7px; transform: rotate(26deg); }
+    .head { position: absolute; top: 58px; left: 23px; width: 164px; height: 148px; border: 5px solid #75465d; border-radius: 48% 48% 44% 44%; background: #ffcddd; }
+    .tuft { position: absolute; top: -17px; left: 61px; width: 40px; height: 31px; border: 5px solid #75465d; border-bottom: 0; border-radius: 50% 50% 0 0; background: #ffcddd; transform: rotate(8deg); }
+    .eye { position: absolute; top: 63px; width: 14px; height: 20px; border-radius: 50%; background: #49313b; } .eye.left { left: 43px; } .eye.right { right: 43px; }
+    .eye::after { content: ""; position: absolute; top: 3px; left: 3px; width: 4px; height: 5px; border-radius: 50%; background: white; }
+    .blush { position: absolute; top: 93px; width: 28px; height: 13px; border-radius: 50%; background: #f08da6; opacity: .75; } .blush.left { left: 15px; } .blush.right { right: 15px; }
+    .mouth { position: absolute; top: 88px; left: 73px; width: 20px; height: 17px; border-bottom: 4px solid #75465d; border-radius: 0 0 50% 50%; }
+    .body { position: absolute; left: 48px; bottom: 2px; width: 115px; height: 86px; border: 5px solid #75465d; border-radius: 46% 46% 27% 27%; background: #d89ab4; }
+    .body::after { content: "⌁"; position: absolute; top: 12px; left: 43px; color: #fff4f8; font-size: 35px; font-weight: bold; }
+    .paw { position: absolute; bottom: 33px; width: 45px; height: 48px; border: 5px solid #75465d; border-radius: 48%; background: #ffcddd; } .paw.left { left: 19px; transform: rotate(28deg); } .paw.right { right: 19px; transform: rotate(-28deg); }
+    .speech { position: absolute; top: 14px; right: -10px; padding: 10px 14px; border: 3px solid #75465d; border-radius: 16px; color: #75465d; background: white; font-weight: 900; transform: rotate(5deg); }
+    .speech::after { content: ""; position: absolute; bottom: -12px; left: 18px; border: 7px solid transparent; border-top-color: #75465d; transform: rotate(22deg); }
+    .caption { margin-top: 13px; color: #75465d; font-size: 17px; font-weight: 800; letter-spacing: 1px; text-align: center; }
+    @keyframes float { 50% { transform: translateY(-9px) rotate(1deg); } }
+    @keyframes twinkle { 50% { opacity: .35; transform: scale(.75) rotate(20deg); } }
+
+    @media (max-width: 760px) {
+      body { place-items: start center; }
+      .nickname { top: 12px; left: 14px; font-size: 13px; }
+      .workbench { flex-direction: column; padding: 67px 14px 24px; gap: 10px; }
+      .calculator { max-width: 470px; }
+      .mascot-zone { width: 270px; height: 280px; transform: scale(.82); margin-top: -18px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="nickname">某某某</div>
+  <main class="workbench">
+    <section class="calculator" aria-label="工程計算機">
+      <div class="brand-row"><div class="brand">CASIO</div><div class="model">fx-991ES PLUS<br>NATURAL-V.P.A.M.</div></div>
+      <div class="screen-wrap"><div class="screen"><div class="screen-meta"><span id="angle-label">DEG</span><span>Math ▲</span></div><div class="screen-value" id="display">0</div></div></div>
+      <div class="mode-row"><span>工程運算模式</span><div class="toggle"><button class="active" data-angle="DEG">DEG</button><button data-angle="RAD">RAD</button></div></div>
+      <div class="keys">
+        <button class="key function" data-action="clear">AC</button><button class="key function" data-action="delete">DEL</button><button class="key function" data-value="(">(</button><button class="key function" data-value=")">)</button><button class="key operator" data-value="÷">÷</button>
+        <button class="key function" data-value="sin(">sin</button><button class="key function" data-value="cos(">cos</button><button class="key function" data-value="tan(">tan</button><button class="key function" data-value="√(">√</button><button class="key operator" data-value="×">×</button>
+        <button class="key function" data-value="log(">log</button><button class="key function" data-value="ln(">ln</button><button class="key function" data-value="^2">x²</button><button class="key function" data-value="^">xʸ</button><button class="key operator" data-value="-">−</button>
+        <button class="key function" data-value="π">π</button><button class="key function" data-value="!">x!</button><button class="key" data-value="7">7</button><button class="key" data-value="8">8</button><button class="key" data-value="9">9</button>
+        <button class="key function" data-value="Ans">Ans</button><button class="key operator" data-value="%">%</button><button class="key" data-value="4">4</button><button class="key" data-value="5">5</button><button class="key" data-value="6">6</button>
+        <button class="key function" data-value="e">e</button><button class="key operator" data-value="+">+</button><button class="key" data-value="1">1</button><button class="key" data-value="2">2</button><button class="key" data-value="3">3</button>
+        <button class="key function" data-value="10^">10ˣ</button><button class="key" data-value="0">0</button><button class="key" data-value=".">.</button><button class="key equals wide" data-action="calculate">＝</button>
+      </div>
+    </section>
+
+    <aside class="mascot-zone" aria-label="可愛的計算小助手">
+      <span class="sparkle one">✦</span><span class="sparkle two">✧</span><span class="sparkle three">✦</span>
+      <div class="speech">算得出來！</div>
+      <div class="mascot"><div class="ear left"></div><div class="ear right"></div><div class="head"><div class="tuft"></div><div class="eye left"></div><div class="eye right"></div><div class="blush left"></div><div class="blush right"></div><div class="mouth"></div></div><div class="body"></div><div class="paw left"></div><div class="paw right"></div></div>
+      <div class="caption">小粉紅工程助手</div>
+    </aside>
+  </main>
+
+  <script>
+    const display = document.querySelector('#display');
+    const angleLabel = document.querySelector('#angle-label');
+    let expression = '';
+    let answer = 0;
+    let angleMode = 'DEG';
+
+    function render() { display.textContent = expression || '0'; }
+    function append(value) {
+      if (expression === '錯誤') expression = '';
+      if (value === 'Ans') value = String(answer);
+      expression += value;
+      render();
+    }
+    function factorial(number) {
+      if (number < 0 || !Number.isInteger(number)) throw new Error('factorial');
+      let result = 1;
+      for (let index = 2; index <= number; index += 1) result *= index;
+      return result;
+    }
+    function calculate() {
+      try {
+        let source = expression.replaceAll('×', '*').replaceAll('÷', '/').replaceAll('π', 'PI').replaceAll('^', '**').replaceAll('%', '/100');
+        source = source.replace(/(\d+(?:\.\d+)?)!/g, 'factorial($1)');
+        source = source.replace(/√\(/g, 'sqrt(');
+        const radians = value => angleMode === 'DEG' ? value * Math.PI / 180 : value;
+        const scope = { PI: Math.PI, e: Math.E, factorial, sqrt: Math.sqrt, sin: value => Math.sin(radians(value)), cos: value => Math.cos(radians(value)), tan: value => Math.tan(radians(value)), log: Math.log10, ln: Math.log };
+        const result = Function(...Object.keys(scope), 'return ' + source)(...Object.values(scope));
+        if (!Number.isFinite(result)) throw new Error('invalid');
+        answer = Number(result.toPrecision(12));
+        expression = String(answer);
+        render();
+      } catch (error) {
+        expression = '錯誤';
+        render();
+      }
+    }
+
+    document.querySelectorAll('[data-value]').forEach(button => button.addEventListener('click', () => append(button.dataset.value)));
+    document.querySelector('[data-action="clear"]').addEventListener('click', () => { expression = ''; render(); });
+    document.querySelector('[data-action="delete"]').addEventListener('click', () => { expression = expression.slice(0, -1); render(); });
+    document.querySelector('[data-action="calculate"]').addEventListener('click', calculate);
+    document.querySelectorAll('[data-angle]').forEach(button => button.addEventListener('click', () => {
+      angleMode = button.dataset.angle;
+      angleLabel.textContent = angleMode;
+      document.querySelectorAll('[data-angle]').forEach(item => item.classList.toggle('active', item === button));
+    }));
+    document.addEventListener('keydown', event => {
+      if (/^[0-9.]$/.test(event.key)) append(event.key);
+      if ('+-*/()'.includes(event.key)) append(event.key.replace('*', '×').replace('/', '÷'));
+      if (event.key === 'Enter') calculate();
+      if (event.key === 'Escape') { expression = ''; render(); }
+      if (event.key === 'Backspace') { expression = expression.slice(0, -1); render(); }
+    });
+  </script>
+</body>
+</html>
