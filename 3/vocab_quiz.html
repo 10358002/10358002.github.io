@@ -41,6 +41,12 @@
       <div class="score">得分：<span id="score">0</span> / 100</div>
     </div>
 
+    <div style="margin-bottom:12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <input id="sheetUrl" placeholder="在此貼上 Google Sheets 或 CSV 連結（可留空使用內建題庫）" style="flex:1;padding:8px;border-radius:6px;border:1px solid #ddd">
+      <button id="loadSheetBtn">載入題庫</button>
+      <div style="font-size:13px;color:#666">或於網址加入 <code>?sheet=網址</code> 自動載入</div>
+    </div>
+
     <div id="quiz-area">
       <div class="question-box">
         <div id="q-index">題目 1 / 20</div>
@@ -67,7 +73,8 @@
 
   <script>
     // 主要設定
-    const SHEET_CSV = 'https://docs.google.com/spreadsheets/d/1WNFJAjHWDrBns4N7H550pKPlSk4eh08C83OEabH4e5w/export?format=csv&gid=0';
+    // 若使用預設試算表，請確保已發布為 CSV 或公開存取；也可在上方貼入自訂網址或於網址列使用 ?sheet=...
+    const DEFAULT_SHEET = 'https://docs.google.com/spreadsheets/d/1WNFJAjHWDrBns4N7H550pKPlSk4eh08C83OEabH4e5w';
     const TOTAL = 20;
     const TIME_LIMIT = 600; // seconds (10 minutes)
     const POINT_PER = 5;
@@ -92,6 +99,20 @@
 
     submitBtn.addEventListener('click', onSubmit);
     nextBtn.addEventListener('click', nextQuestion);
+    document.getElementById('loadSheetBtn').addEventListener('click', async ()=>{
+      const url = document.getElementById('sheetUrl').value.trim();
+      if(!url){ alert('請貼入 Google Sheets 或 CSV 連結，或留空使用內建題庫。'); return; }
+      await attemptLoad(url);
+    });
+
+    // 若網址列帶有 ?sheet=，自動嘗試載入
+    (function checkQuerySheet(){
+      try{
+        const params = new URLSearchParams(location.search);
+        const s = params.get('sheet');
+        if(s){ document.getElementById('sheetUrl').value = s; attemptLoad(s); }
+      }catch(e){}
+    })();
 
     function startTimer(){
       updateTime();
@@ -173,13 +194,15 @@
     }
 
     // 嘗試從 Google Sheets 載入題庫，失敗時使用內建題目
-    async function loadQuestions(){
+    // 嘗試載入題庫（可傳入自訂 url），若為 Google Sheets edit 連結會嘗試轉換為 CSV export 格式
+    async function loadQuestions(url){
       try{
-        const res = await fetch(SHEET_CSV);
+        const finalUrl = convertGoogleSheetToCSV(url) || url || (convertGoogleSheetToCSV(DEFAULT_SHEET));
+        const res = await fetch(finalUrl);
         if(!res.ok) throw new Error('fetch fail');
         const txt = await res.text();
         const rows = parseCSV(txt);
-        // 假設第一列為標頭，欄位：prompt,opt1,opt2,opt3,opt4,answerIndex（0-based或文字）
+        // 假設第一列為標頭，欄位：prompt,opt1,opt2,opt3,opt4,answerIndex（0-based）
         const data = rows.slice(1).map(r=>({prompt:r[0]||'',options:[r[1]||'',r[2]||'',r[3]||'',r[4]||''],answer: isNaN(Number(r[5]))?0:Number(r[5])})).filter(x=>x.prompt);
         if(data.length < TOTAL) throw new Error('not enough');
         questions = shuffle(data).slice(0,TOTAL);
@@ -209,6 +232,40 @@
         ];
         questions = fallback.map(r=>({prompt:r[0],options:[r[1],r[2],r[3],r[4]],answer:r[5]}));
       }
+    }
+
+    // 把 Google Sheets 的分享頁面或 edit 連結轉為 CSV export 連結（若無法解析回傳 null）
+    function convertGoogleSheetToCSV(url){
+      if(!url) return null;
+      try{
+        const u = new URL(url);
+        // 支援 formats: /d/{id}/edit or /spreadsheets/d/{id}
+        const m = u.pathname.match(/\/d\/([-_a-zA-Z0-9]+)(?:\/|$)/);
+        const id = m ? m[1] : null;
+        // 嘗試取得 gid（查詢或 hash）
+        let gid = u.searchParams.get('gid');
+        if(!gid && u.hash){ const h = u.hash; const mm = h.match(/gid=(\d+)/); if(mm) gid=mm[1]; }
+        if(!id) return null;
+        return `https://docs.google.com/spreadsheets/d/${id}/export?format=csv&gid=${gid||0}`;
+      }catch(e){ return null; }
+    }
+
+    // 嘗試載入並初始化題庫（供按鈕與 query auto-use）
+    async function attemptLoad(url){
+      // 停掉舊計時，避免重複
+      clearInterval(timerId);
+      questions = [];
+      try{
+        await loadQuestions(url);
+      }catch(e){
+        alert('載入失敗，將使用內建題庫。\n若要從 Google Sheets 載入，請確認試算表已發布為 CSV 或共用為公開。');
+        // 仍會在 loadQuestions 的 catch 使用 fallback
+        await loadQuestions();
+      }
+      current = 0; score = 0; scoreEl.textContent = score;
+      document.getElementById('quiz-area').classList.remove('hidden');
+      resultDiv.classList.add('hidden');
+      showQuestion(); startTimer();
     }
 
     // 小工具
