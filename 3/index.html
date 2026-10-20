@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>紅色火柴人打架遊戲</title>
+  <title>精緻紅色火柴人打架</title>
   <style>
     * { box-sizing: border-box; }
 
@@ -13,94 +13,188 @@
       display: flex;
       justify-content: center;
       align-items: center;
-      background: linear-gradient(135deg, #1f2937, #111827);
-      font-family: "Microsoft JhengHei", Arial, sans-serif;
-      color: white;
+      background:
+        radial-gradient(circle at top, rgba(251, 113, 133, 0.18), transparent 35%),
+        linear-gradient(135deg, #0f172a, #111827 40%, #1f2937);
+      font-family: "Microsoft JhengHei", "PingFang TC", Arial, sans-serif;
+      color: #f8fafc;
     }
 
     .game-wrap {
-      width: min(92vw, 960px);
-      background: rgba(17, 24, 39, 0.9);
-      border: 4px solid #fca5a5;
-      border-radius: 20px;
-      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
-      padding: 22px;
+      width: min(94vw, 980px);
+      padding: 20px 20px 16px;
+      border-radius: 26px;
+      background: rgba(15, 23, 42, 0.8);
+      border: 2px solid rgba(248, 113, 113, 0.9);
+      box-shadow:
+        0 0 0 3px rgba(239, 68, 68, 0.15),
+        0 25px 60px rgba(0, 0, 0, 0.45);
+      backdrop-filter: blur(8px);
     }
 
-    h1 {
-      margin: 0 0 12px;
-      text-align: center;
+    .title-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 14px;
+      padding: 6px 8px 10px;
+    }
+
+    .title {
+      margin: 0;
+      font-size: clamp(1.7rem, 2vw, 2.7rem);
+      font-weight: 900;
+      letter-spacing: 2px;
       color: #fca5a5;
-      font-size: clamp(1.7rem, 2.3vw, 2.6rem);
+      text-shadow: 0 0 12px rgba(251, 113, 133, 0.4);
+    }
+
+    .badge {
+      padding: 7px 14px;
+      font-size: 0.84rem;
+      font-weight: 700;
+      color: #fff;
+      background: linear-gradient(135deg, #ef4444, #f97316);
+      border-radius: 999px;
+      box-shadow: 0 8px 16px rgba(239, 68, 68, 0.35);
     }
 
     .hud {
-      display: flex;
-      justify-content: space-between;
+      display: grid;
+      grid-template-columns: 1fr 1.7fr 1fr;
+      gap: 18px;
       align-items: center;
-      gap: 16px;
+      padding: 10px 12px;
       margin-bottom: 12px;
-      padding: 8px 12px;
-      border-radius: 12px;
-      background: rgba(255, 255, 255, 0.05);
-      font-size: 1rem;
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .label {
+      font-size: 0.92rem;
+      font-weight: 700;
+      color: #e2e8f0;
+      letter-spacing: 1px;
+    }
+
+    .health-wrap {
+      display: flex;
+      align-items: center;
+      gap: 10px;
     }
 
     .health-bar {
+      position: relative;
       flex: 1;
-      height: 14px;
-      background: rgba(255,255,255,0.2);
+      height: 18px;
       border-radius: 999px;
       overflow: hidden;
-      border: 1px solid rgba(255,255,255,0.15);
+      background: rgba(255,255,255,0.14);
+      border: 1px solid rgba(255,255,255,0.18);
+      box-shadow: inset 0 3px 6px rgba(0, 0, 0, 0.18);
     }
 
     .health-fill {
       height: 100%;
       width: 100%;
-      background: linear-gradient(90deg, #22c55e, #facc15, #ef4444);
-      transition: width 0.2s ease;
+      border-radius: inherit;
+      background: linear-gradient(90deg, #22c55e 0%, #a3e635 30%, #facc15 60%, #ef4444 100%);
+      transition: width 0.18s ease;
+      box-shadow: 0 0 16px rgba(34, 197, 94, 0.3);
+    }
+
+    .value {
+      min-width: 44px;
+      text-align: center;
+      font-weight: 800;
+      color: #f8fafc;
     }
 
     canvas {
       display: block;
       width: 100%;
       height: auto;
-      background: linear-gradient(#7dd3fc 0%, #dbeafe 45%, #a7f3d0 46%, #4ade80 100%);
-      border-radius: 16px;
-      border: 3px solid rgba(255,255,255,0.2);
+      border-radius: 18px;
+      border: 3px solid rgba(255,255,255,0.12);
+      background: linear-gradient(#7dd3fc 0%, #dbeafe 46%, #dcfce7 47%, #4ade80 100%);
+      box-shadow: inset 0 0 20px rgba(255,255,255,0.12);
     }
 
     .controls {
-      margin-top: 12px;
-      text-align: center;
-      color: #e5e7eb;
-      line-height: 1.8;
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 10px 18px;
+      margin-top: 14px;
+      padding: 12px 10px 2px;
       font-size: 0.96rem;
+      color: #dbeafe;
     }
 
-    .controls strong {
+    .control-item {
+      padding: 7px 12px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+
+    .control-item strong {
       color: #fca5a5;
+    }
+
+    @media (max-width: 640px) {
+      .game-wrap {
+        padding: 14px 12px 12px;
+      }
+
+      .hud {
+        grid-template-columns: 1fr;
+        gap: 10px;
+      }
+
+      .title-bar {
+        flex-direction: column;
+        align-items: flex-start;
+      }
     }
   </style>
 </head>
 <body>
   <div class="game-wrap">
-    <h1>紅色火柴人打架</h1>
+    <div class="title-bar">
+      <h1 class="title">紅色火柴人打架</h1>
+      <div class="badge">Arena Fight</div>
+    </div>
 
     <div class="hud">
-      <div>HP：<span id="playerHP">100</span></div>
-      <div class="health-bar"><div class="health-fill" id="playerHealthFill"></div></div>
-      <div>敵人：<span id="enemyHP">100</span></div>
+      <div class="health-wrap">
+        <span class="label">紅色</span>
+        <div class="health-bar">
+          <div class="health-fill" id="playerHealthFill"></div>
+        </div>
+        <span class="value" id="playerHP">100</span>
+      </div>
+
+      <div style="text-align:center; font-weight:800; color:#f8fafc; letter-spacing:2px;">VS</div>
+
+      <div class="health-wrap">
+        <span class="label">藍色</span>
+        <div class="health-bar">
+          <div class="health-fill" id="enemyHealthFill" style="background: linear-gradient(90deg, #38bdf8 0%, #60a5fa 35%, #a78bfa 100%);"></div>
+        </div>
+        <span class="value" id="enemyHP">100</span>
+      </div>
     </div>
 
     <canvas id="gameCanvas" width="900" height="420"></canvas>
 
     <div class="controls">
-      <div><strong>移動</strong>：左/右鍵</div>
-      <div><strong>跳躍</strong>：上鍵</div>
-      <div><strong>蹲下</strong>：下鍵</div>
-      <div><strong>攻擊</strong>：空白鍵</div>
+      <div class="control-item"><strong>移動</strong>：左右鍵</div>
+      <div class="control-item"><strong>跳躍</strong>：上鍵</div>
+      <div class="control-item"><strong>蹲下</strong>：下鍵</div>
+      <div class="control-item"><strong>攻擊</strong>：空白鍵</div>
     </div>
   </div>
 
@@ -111,6 +205,7 @@
     const playerHPDisplay = document.getElementById('playerHP');
     const enemyHPDisplay = document.getElementById('enemyHP');
     const playerHealthFill = document.getElementById('playerHealthFill');
+    const enemyHealthFill = document.getElementById('enemyHealthFill');
 
     const groundY = 320;
     const keys = {};
@@ -121,41 +216,41 @@
 
     function createPlayer() {
       return {
-        x: 160,
+        x: 170,
         y: groundY,
         width: 32,
-        height: 110,
+        height: 112,
         vx: 0,
         vy: 0,
-        speed: 5.5,
-        jumpPower: 16,
+        speed: 5.7,
+        jumpPower: 16.5,
         gravity: 0.7,
         onGround: true,
         crouching: false,
         facing: 1,
         hp: 100,
-        attackTimer: 0,
         hitFlash: 0,
+        attackTimer: 0,
         attackCooldown: 0,
       };
     }
 
     function createEnemy() {
       return {
-        x: 700,
+        x: 690,
         y: groundY,
         width: 32,
-        height: 110,
+        height: 112,
         vx: 0,
         vy: 0,
-        speed: 3,
+        speed: 3.2,
         gravity: 0.7,
         onGround: true,
         crouching: false,
         facing: -1,
         hp: 100,
-        attackTimer: 0,
         hitFlash: 0,
+        attackTimer: 0,
         attackCooldown: 0,
       };
     }
@@ -163,18 +258,21 @@
     let player = createPlayer();
     let enemy = createEnemy();
     let gameOver = false;
+    let winnerText = '';
 
     function resetGame() {
       player = createPlayer();
       enemy = createEnemy();
       gameOver = false;
+      winnerText = '';
       updateHud();
     }
 
     function updateHud() {
-      playerHPDisplay.textContent = Math.max(0, Math.ceil(player.hp));
-      enemyHPDisplay.textContent = Math.max(0, Math.ceil(enemy.hp));
+      playerHPDisplay.textContent = clamp(Math.ceil(player.hp), 0, 100);
+      enemyHPDisplay.textContent = clamp(Math.ceil(enemy.hp), 0, 100);
       playerHealthFill.style.width = (player.hp / 100) * 100 + '%';
+      enemyHealthFill.style.width = (enemy.hp / 100) * 100 + '%';
     }
 
     function handleInput() {
@@ -190,26 +288,23 @@
         player.vx = 0;
       }
 
-      if (keys['ArrowUp'] || keys['w']) {
-        if (player.onGround) {
-          player.vy = -player.jumpPower;
-          player.onGround = false;
-        }
+      if ((keys['ArrowUp'] || keys['w']) && player.onGround) {
+        player.vy = -player.jumpPower;
+        player.onGround = false;
       }
 
       player.crouching = !!(keys['ArrowDown'] || keys['s']);
 
-      if (keys[' '] && player.attackCooldown <= 0) {
+      if ((keys[' '] || keys['Space']) && player.attackCooldown <= 0) {
+        player.attackCooldown = 430;
         player.attackTimer = 18;
-        player.attackCooldown = 350;
         checkAttack(player, enemy);
       }
     }
 
     function updatePlayer() {
-      const prevY = player.y;
       player.x += player.vx;
-      player.x = clamp(player.x, 30, canvas.width - 110);
+      player.x = clamp(player.x, 35, canvas.width - 90);
 
       if (!player.onGround) {
         player.vy += player.gravity;
@@ -226,7 +321,7 @@
       if (player.crouching && player.onGround) {
         player.height = 72;
       } else {
-        player.height = 110;
+        player.height = 112;
       }
 
       if (player.attackCooldown > 0) {
@@ -240,24 +335,21 @@
       if (player.hitFlash > 0) {
         player.hitFlash -= 1;
       }
-
-      if (player.y !== prevY && !player.onGround) {
-        player.crouching = false;
-      }
     }
 
     function updateEnemy() {
       const dx = player.x - enemy.x;
-      const absDx = Math.abs(dx);
+      const dist = Math.abs(dx);
 
-      enemy.vx = 0;
-      if (absDx > 20) {
+      if (dist > 18) {
         enemy.vx = (dx > 0 ? 1 : -1) * enemy.speed;
         enemy.facing = dx > 0 ? 1 : -1;
+      } else {
+        enemy.vx = 0;
       }
 
       enemy.x += enemy.vx;
-      enemy.x = clamp(enemy.x, 400, canvas.width - 80);
+      enemy.x = clamp(enemy.x, 420, canvas.width - 90);
 
       if (!enemy.onGround) {
         enemy.vy += enemy.gravity;
@@ -270,16 +362,10 @@
         enemy.onGround = true;
       }
 
-      if (player.x < enemy.x) {
-        enemy.facing = -1;
-      } else {
-        enemy.facing = 1;
-      }
-
       if (enemy.crouching && enemy.onGround) {
         enemy.height = 72;
       } else {
-        enemy.height = 110;
+        enemy.height = 112;
       }
 
       if (enemy.attackCooldown > 0) {
@@ -294,58 +380,83 @@
         enemy.hitFlash -= 1;
       }
 
-      if (Math.abs(player.x - enemy.x) < 90 && Math.random() < 0.025 && enemy.attackCooldown <= 0) {
-        enemy.attackTimer = 18;
-        enemy.attackCooldown = 500;
+      if (Math.abs(player.x - enemy.x) < 110 && Math.random() < 0.028 && enemy.attackCooldown <= 0) {
+        enemy.attackCooldown = 540;
+        enemy.attackTimer = 20;
         checkAttack(enemy, player);
       }
     }
 
     function checkAttack(attacker, target) {
-      const reach = 75;
-      const facingDir = attacker.facing;
+      const reach = 82;
       const dx = target.x - attacker.x;
-      const inRange = Math.abs(dx) < reach && Math.abs(attacker.y - target.y) < 90;
-      const facingCorrect = (facingDir === 1 && dx > 0) || (facingDir === -1 && dx < 0);
+      const inRange = Math.abs(dx) < reach && Math.abs(attacker.y - target.y) < 95;
+      const facingCorrect = (attacker.facing === 1 && dx > 0) || (attacker.facing === -1 && dx < 0);
 
       if (inRange && facingCorrect) {
-        const damage = target.crouching ? 8 : 14;
+        const damage = target.crouching ? 9 : 15;
         target.hp -= damage;
-        target.hitFlash = 10;
-        target.x += attacker.facing * 18;
+        target.hitFlash = 12;
+        target.x += attacker.facing * 14;
+
         if (target.hp <= 0) {
           target.hp = 0;
           gameOver = true;
-          setTimeout(() => resetGame(), 1200);
+          winnerText = attacker === player ? '你贏了！' : '敵人獲勝！';
+          setTimeout(() => resetGame(), 1500);
         }
       }
+
       updateHud();
     }
 
-    function drawGround() {
-      ctx.fillStyle = '#4b5563';
-      ctx.fillRect(0, groundY + 20, canvas.width, canvas.height - groundY - 20);
+    function drawBackground() {
+      ctx.fillStyle = '#7dd3fc';
+      ctx.fillRect(0, 0, canvas.width, groundY);
 
-      ctx.fillStyle = '#d1fae5';
-      for (let i = 0; i < canvas.width; i += 40) {
-        ctx.fillRect(i, groundY + 22, 15, 8);
+      ctx.fillStyle = 'rgba(255,255,255,0.18)';
+      for (let i = 0; i < 8; i++) {
+        const x = i * 160 + 60;
+        const y = 140 + (i % 2) * 18;
+        ctx.beginPath();
+        ctx.moveTo(x, y + 60);
+        ctx.lineTo(x + 36, y);
+        ctx.lineTo(x + 72, y + 60);
+        ctx.closePath();
+        ctx.fill();
+      }
+
+      ctx.fillStyle = '#16a34a';
+      ctx.fillRect(0, groundY, canvas.width, canvas.height - groundY);
+
+      ctx.fillStyle = '#14532d';
+      for (let i = 0; i < canvas.width; i += 28) {
+        ctx.fillRect(i, groundY + 8, 12, 10);
       }
     }
 
-    function drawStickFigure(unit, color, isEnemy = false) {
+    function drawArenaGlow() {
+      const grd = ctx.createRadialGradient(canvas.width / 2, groundY - 10, 20, canvas.width / 2, groundY - 10, 300);
+      grd.addColorStop(0, 'rgba(255,255,255,0.16)');
+      grd.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.fillStyle = grd;
+      ctx.fillRect(0, 0, canvas.width, groundY + 50);
+    }
+
+    function drawStickFigure(unit, color) {
       const x = unit.x;
       const y = unit.y;
       const bodyHeight = unit.height;
       const headRadius = 18;
-      const torsoHeight = unit.crouching ? 26 : 52;
-      const bodyY = y - bodyHeight + 18;
+      const torsoHeight = unit.crouching ? 28 : 52;
 
       ctx.save();
       ctx.translate(x, y);
 
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
       ctx.strokeStyle = color;
       ctx.lineWidth = 6;
-      ctx.lineCap = 'round';
 
       ctx.beginPath();
       ctx.arc(0, -bodyHeight + headRadius + 8, headRadius, 0, Math.PI * 2);
@@ -354,70 +465,59 @@
       ctx.beginPath();
       ctx.moveTo(0, -bodyHeight + 28);
       ctx.lineTo(0, -bodyHeight + 28 + torsoHeight);
+
       ctx.moveTo(0, -bodyHeight + 38);
-      ctx.lineTo(18 * unit.facing, -bodyHeight + 60);
+      ctx.lineTo(18 * unit.facing, -bodyHeight + 68);
+
       ctx.moveTo(0, -bodyHeight + 38);
-      ctx.lineTo(-18 * unit.facing, -bodyHeight + 60);
+      ctx.lineTo(-18 * unit.facing, -bodyHeight + 68);
+
       ctx.moveTo(0, -bodyHeight + 28 + torsoHeight);
-      ctx.lineTo(24 * unit.facing, -bodyHeight + 28 + torsoHeight + 40);
+      ctx.lineTo(26 * unit.facing, -bodyHeight + 28 + torsoHeight + 38);
+
       ctx.moveTo(0, -bodyHeight + 28 + torsoHeight);
-      ctx.lineTo(-24 * unit.facing, -bodyHeight + 28 + torsoHeight + 40);
+      ctx.lineTo(-26 * unit.facing, -bodyHeight + 28 + torsoHeight + 38);
       ctx.stroke();
 
-      if (unit.attackTimer > 0) {
-        ctx.strokeStyle = '#fef3c7';
-        ctx.lineWidth = 8;
-        ctx.beginPath();
-        ctx.arc(20 * unit.facing, -bodyHeight + 50, 22, -1.2, 1.2);
-        ctx.stroke();
-      }
+      const punchReach = unit.attackTimer > 0 ? 20 : 0;
+      ctx.beginPath();
+      ctx.strokeStyle = '#fef3c7';
+      ctx.lineWidth = 7;
+      ctx.moveTo(0, -bodyHeight + 48);
+      ctx.lineTo(punchReach * unit.facing, -bodyHeight + 48);
+      ctx.stroke();
 
       if (unit.hitFlash > 0) {
-        ctx.fillStyle = 'rgba(255,255,255,0.8)';
-        ctx.fillRect(-28, -bodyHeight - 18, 56, bodyHeight + 26);
+        ctx.fillStyle = 'rgba(255,255,255,0.7)';
+        ctx.fillRect(-24, -bodyHeight - 10, 48, bodyHeight + 18);
       }
 
       ctx.restore();
     }
 
-    function drawUI() {
-      ctx.fillStyle = 'rgba(15, 23, 42, 0.6)';
-      ctx.fillRect(18, 18, 200, 52);
-
-      ctx.fillStyle = '#f8fafc';
-      ctx.font = 'bold 24px Microsoft JhengHei';
-      ctx.fillText('紅色火柴人', 28, 52);
+    function drawFightText() {
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.45)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
 
       if (gameOver) {
-        ctx.fillStyle = 'rgba(0,0,0,0.5)';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
         ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 52px Microsoft JhengHei';
+        ctx.font = '900 52px Microsoft JhengHei';
         ctx.textAlign = 'center';
-        ctx.fillText('勝負已分！', canvas.width / 2, canvas.height / 2 - 10);
-        ctx.font = '24px Microsoft JhengHei';
-        ctx.fillText('重新開始中...', canvas.width / 2, canvas.height / 2 + 40);
+        ctx.fillText(winnerText, canvas.width / 2, canvas.height / 2 - 10);
+        ctx.font = '700 24px Microsoft JhengHei';
+        ctx.fillText('重新開始中...', canvas.width / 2, canvas.height / 2 + 35);
         ctx.textAlign = 'left';
       }
     }
 
-    function drawBackground() {
-      ctx.fillStyle = '#7dd3fc';
-      ctx.fillRect(0, 0, canvas.width, groundY);
-
-      ctx.fillStyle = '#93c5fd';
-      for (let i = 0; i < 7; i++) {
-        const x = i * 170 + 80;
-        const y = 86 + (i % 2) * 18;
-        ctx.beginPath();
-        ctx.moveTo(x, y + 80);
-        ctx.lineTo(x + 40, y);
-        ctx.lineTo(x + 80, y + 80);
-        ctx.fill();
-      }
-
-      ctx.fillStyle = '#16a34a';
-      ctx.fillRect(0, groundY, canvas.width, 40);
+    function drawCenterLine() {
+      ctx.strokeStyle = 'rgba(255,255,255,0.18)';
+      ctx.setLineDash([12, 12]);
+      ctx.beginPath();
+      ctx.moveTo(canvas.width / 2, 0);
+      ctx.lineTo(canvas.width / 2, groundY + 40);
+      ctx.stroke();
+      ctx.setLineDash([]);
     }
 
     function gameLoop() {
@@ -426,12 +526,13 @@
       updateEnemy();
 
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      drawBackground();
-      drawGround();
 
-      drawStickFigure(enemy, '#60a5fa', true);
-      drawStickFigure(player, '#ef4444', false);
-      drawUI();
+      drawBackground();
+      drawArenaGlow();
+      drawCenterLine();
+      drawStickFigure(enemy, '#60a5fa');
+      drawStickFigure(player, '#ef4444');
+      drawFightText();
 
       requestAnimationFrame(gameLoop);
     }
@@ -439,7 +540,8 @@
     window.addEventListener('keydown', function (e) {
       const key = e.key;
       keys[key] = true;
-      if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' '].includes(key)) {
+
+      if ([ 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', ' ' ].includes(key)) {
         e.preventDefault();
       }
     });
@@ -448,7 +550,7 @@
       keys[e.key] = false;
     });
 
-    resetGame();
+    updateHud();
     requestAnimationFrame(gameLoop);
   </script>
 </body>
