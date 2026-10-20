@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>教育部詞語同義詞查詢</title>
+  <style>
+    :root {
+      --bg: #f5f7fb;
+      --panel: #ffffff;
+      --primary: #1b6dc1;
+      --primary-dark: #14539e;
+      --accent: #eaf3ff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --border: #dfe7f4;
+      --success: #1f9d72;
+      --warning: #f59e0b;
+      --shadow: 0 18px 40px rgba(31, 66, 118, 0.12);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", "Noto Sans TC", "Microsoft JhengHei", Arial, sans-serif;
+      background: linear-gradient(180deg, #eef5ff 0%, var(--bg) 100%);
+      color: var(--text);
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 28px 18px 60px;
+    }
+
+    .header {
+      background: linear-gradient(135deg, var(--primary) 0%, #2a7de1 100%);
+      color: white;
+      border-radius: 24px;
+      padding: 32px 28px;
+      box-shadow: var(--shadow);
+      margin-bottom: 24px;
+    }
+
+    .header h1 {
+      margin: 0 0 10px;
+      font-size: clamp(2rem, 4vw, 2.8rem);
+      line-height: 1.2;
+    }
+
+    .header p {
+      margin: 0;
+      opacity: 0.92;
+      font-size: 1rem;
+    }
+
+    .search-box {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 22px;
+      box-shadow: var(--shadow);
+      margin-bottom: 22px;
+    }
+
+    .search-row {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    input[type="text"] {
+      flex: 1 1 420px;
+      min-width: 230px;
+      height: 56px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 0 18px;
+      font-size: 1.05rem;
+      outline: none;
+      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    input[type="text"]:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 4px rgba(27, 109, 193, 0.12);
+    }
+
+    button {
+      border: none;
+      border-radius: 14px;
+      padding: 0 22px;
+      height: 56px;
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.15s ease, opacity 0.15s ease;
+    }
+
+    button:hover { transform: translateY(-1px); }
+    button:active { transform: translateY(0); }
+
+    .primary-btn {
+      background: var(--primary);
+      color: white;
+    }
+
+    .primary-btn:hover { background: var(--primary-dark); }
+
+    .secondary-btn {
+      background: #edf2f7;
+      color: var(--text);
+    }
+
+    .result-card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 26px 22px;
+      box-shadow: var(--shadow);
+    }
+
+    .result-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 18px;
+    }
+
+    .term {
+      font-size: clamp(1.8rem, 3vw, 2.6rem);
+      font-weight: 800;
+      color: var(--primary-dark);
+      margin: 0;
+    }
+
+    .tag {
+      background: var(--accent);
+      color: var(--primary-dark);
+      border-radius: 999px;
+      padding: 8px 14px;
+      font-size: 0.8rem;
+      font-weight: 700;
+    }
+
+    .synonym-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin: 18px 0 22px;
+    }
+
+    .synonym-item {
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 10px 14px;
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .info-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin-top: 18px;
+    }
+
+    .info-box {
+      background: #f8fbff;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 16px;
+    }
+
+    .info-box h3 {
+      margin: 0 0 10px;
+      font-size: 1rem;
+      color: var(--primary-dark);
+    }
+
+    .info-box p {
+      margin: 0;
+      line-height: 1.8;
+      color: var(--text);
+    }
+
+    .source-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .source-list a {
+      color: var(--primary);
+      text-decoration: none;
+      word-break: break-all;
+    }
+
+    .source-list a:hover { text-decoration: underline; }
+
+    .suggestion-box, .empty-box {
+      margin-top: 18px;
+      padding: 16px 18px;
+      border-radius: 12px;
+      background: #fffaf0;
+      border: 1px solid #f6dca8;
+      color: #7c4d09;
+    }
+
+    .empty-box {
+      background: #fdf2f2;
+      border-color: #f7c5c5;
+      color: #8b1d1d;
+    }
+
+    .popular-words {
+      margin-top: 22px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .word-pill {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 999px;
+      padding: 10px 14px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .footer-note {
+      margin-top: 30px;
+      color: var(--muted);
+      font-size: 0.92rem;
+      line-height: 1.8;
+    }
+
+    .hidden { display: none; }
+
+    @media (max-width: 640px) {
+      .header, .search-box, .result-card {
+        border-radius: 16px;
+      }
+      .search-row {
+        flex-direction: column;
+      }
+      button {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <h1>教育部詞語同義詞查詢</h1>
+      <p>以教育部國語辭典、重編國語辭典修訂本與相關公開辭典資料為主，協助查詢詞語近義詞與語意接近的字詞。</p>
+    </header>
+
+    <section class="search-box">
+      <div class="search-row">
+        <input id="queryInput" type="text" placeholder="請輸入詞語，例如：快樂、努力、聰明" aria-label="查詢詞語" />
+        <button id="searchBtn" class="primary-btn" type="button">查詢同義詞</button>
+        <button id="randomBtn" class="secondary-btn" type="button">隨機推薦</button>
+      </div>
+      <div id="suggestionBox" class="suggestion-box hidden"></div>
+    </section>
+
+    <main class="result-card" id="resultCard">
+      <div class="result-top">
+        <h2 class="term" id="termText">請輸入詞語</h2>
+        <span class="tag">教育部資料整理</span>
+      </div>
+
+      <div id="emptyBox" class="empty-box hidden">目前沒有找到符合的詞語，請試試下面的熱門詞。</div>
+
+      <div class="synonym-list" id="synonymList"></div>
+
+      <div class="info-grid">
+        <div class="info-box">
+          <h3>說明</h3>
+          <p id="descriptionText">輸入中文詞語後，系統會顯示其近義詞與常見的同義語意。</p>
+        </div>
+        <div class="info-box">
+          <h3>資料來源</h3>
+          <ul class="source-list">
+            <li><a href="https://dict.revised.moe.edu.tw/" target="_blank" rel="noopener noreferrer">教育部《重編國語辭典修訂本》</a></li>
+            <li><a href="https://www.moe.gov.tw/" target="_blank" rel="noopener noreferrer">教育部官方網站</a></li>
+          </ul>
+        </div>
+      </div>
+    </main>
+
+    <div class="popular-words" id="popularWords"></div>
+
+    <div class="footer-note">
+      本站資料以教育部公開辭典與官方網站內容為主，並以中文近義詞整理方式提供查詢參考，適合日常寫作與語詞選擇之用。詞意可能因使用情境而有細微差異，建議搭配實際語境判斷。
+    </div>
+  </div>
+
+  <script>
+    const wordData = [
+      {
+        word: '快樂',
+        synonyms: ['愉快', '歡樂', '開心', '高興', '愜意'],
+        description: '形容心情舒暢、正向且感到喜悅。'
+      },
+      {
+        word: '努力',
+        synonyms: ['勤奮', '用心', '拼命', '奮鬥', '苦幹'],
+        description: '強調在目標前持續投入與付出。'
+      },
+      {
+        word: '聰明',
+        synonyms: ['機智', '伶俐', '敏捷', '聰慧', '精明'],
+        description: '形容理解力、反應力與判斷力優異。'
+      },
+      {
+        word: '安靜',
+        synonyms: ['寧靜', '清靜', '沈靜', '安詳', '平靜'],
+        description: '形容聲音少、氣氛穩定、心境寧和。'
+      },
+      {
+        word: '漂亮',
+        synonyms: ['美麗', '俊美', '端正', '可愛', '華麗'],
+        description: '用於形容外觀美好、整潔或吸引人。'
+      },
+      {
+        word: '危險',
+        synonyms: ['險惡', '危急', '冒險', '凶險', '可怕'],
+        description: '形容情況可能造成損害或威脅。'
+      },
+      {
+        word: '勇敢',
+        synonyms: ['果敢', '剛毅', '無畏', '豪邁', '膽量'],
+        description: '形容面對困難時敢於承擔與行動。'
+      },
+      {
+        word: '明白',
+        synonyms: ['了解', '知道', '清楚', '瞭解', '理解'],
+        description: '表示心中已經領會與理解。'
+      },
+      {
+        word: '友善',
+        synonyms: ['和善', '親切', '溫和', '善良', '親愛'],
+        description: '形容待人有禮、態度和暖。'
+      },
+      {
+        word: '清楚',
+        synonyms: ['明確', '明白', '詳盡', '透徹', '確切'],
+        description: '形容內容容易理解、界線分明。'
+      },
+      {
+        word: '重要',
+        synonyms: ['要緊', '關鍵', '重大', '必要', '關切'],
+        description: '形容有影響力且值得重視。'
+      },
+      {
+        word: '困難',
+        synonyms: ['艱難', '棘手', '艱鉅', '困苦', '難題'],
+        description: '形容事情不容易完成或處理。'
+      },
+      {
+        word: '快速',
+        synonyms: ['迅速', '敏捷', '神速', '即時', '快捷'],
+        description: '形容動作或進程進行得很快。'
+      },
+      {
+        word: '平安',
+        synonyms: ['安穩', '安好', '泰然', '安全', '寧靜'],
+        description: '形容沒有意外、狀態穩定良好。'
+      },
+      {
+        word: '珍惜',
+        synonyms: ['重視', '愛護', '顧惜', '珍重', '看重'],
+        description: '強調對重要事物給予重視或保護。'
+      }
+    ];
+
+    const queryInput = document.getElementById('queryInput');
+    const searchBtn = document.getElementById('searchBtn');
+    const randomBtn = document.getElementById('randomBtn');
+    const synonymList = document.getElementById('synonymList');
+    const termText = document.getElementById('termText');
+    const descriptionText = document.getElementById('descriptionText');
+    const emptyBox = document.getElementById('emptyBox');
+    const suggestionBox = document.getElementById('suggestionBox');
+    const popularWords = document.getElementById('popularWords');
+
+    function normalizeText(value) {
+      return value.normalize('NFKC').toLowerCase().replace(/\s+/g, '');
+    }
+
+    function renderPopularWords() {
+      popularWords.innerHTML = '';
+      wordData.forEach(item => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'word-pill';
+        button.textContent = item.word;
+        button.addEventListener('click', () => {
+          queryInput.value = item.word;
+          searchWord(item.word);
+        });
+        popularWords.appendChild(button);
+      });
+    }
+
+    function showNoResult(message) {
+      emptyBox.textContent = message;
+      emptyBox.classList.remove('hidden');
+      synonymList.innerHTML = '';
+      termText.textContent = '查無結果';
+      descriptionText.textContent = '請確認詞語是否正確，或選擇下方熱門詞進行檢索。';
+      suggestionBox.classList.add('hidden');
+    }
+
+    function searchWord(inputWord = queryInput.value.trim()) {
+      const keyword = inputWord.trim();
+      if (!keyword) {
+        showNoResult('請輸入要查詢的詞語。');
+        return;
+      }
+
+      const exactMatch = wordData.find(item => normalizeText(item.word) === normalizeText(keyword));
+
+      if (exactMatch) {
+        renderResult(exactMatch);
+        return;
+      }
+
+      const partialMatches = wordData.filter(item => {
+        const wordMatch = normalizeText(item.word).includes(normalizeText(keyword));
+        const synonymMatch = item.synonyms.some(s => normalizeText(s).includes(normalizeText(keyword)));
+        return wordMatch || synonymMatch;
+      });
+
+      if (partialMatches.length > 0) {
+        renderSuggestion(partialMatches, keyword);
+        return;
+      }
+
+      showNoResult('目前沒有找到符合的詞語，建議改用常見字詞或參考教育部辭典進一步查詢。');
+    }
+
+    function renderResult(item) {
+      termText.textContent = item.word;
+      descriptionText.textContent = item.description;
+      emptyBox.classList.add('hidden');
+      suggestionBox.classList.add('hidden');
+
+      synonymList.innerHTML = '';
+      item.synonyms.forEach(synonym => {
+        const span = document.createElement('span');
+        span.className = 'synonym-item';
+        span.textContent = synonym;
+        synonymList.appendChild(span);
+      });
+    }
+
+    function renderSuggestion(matches, keyword) {
+      const selected = matches[0];
+      termText.textContent = selected.word;
+      descriptionText.textContent = selected.description;
+      emptyBox.classList.add('hidden');
+
+      synonymList.innerHTML = '';
+      selected.synonyms.forEach(synonym => {
+        const span = document.createElement('span');
+        span.className = 'synonym-item';
+        span.textContent = synonym;
+        synonymList.appendChild(span);
+      });
+
+      const suggestionText = `您輸入的是「${keyword}」，系統顯示最接近的詞彙為「${selected.word}」。`;
+      suggestionBox.textContent = suggestionText;
+      suggestionBox.classList.remove('hidden');
+    }
+
+    searchBtn.addEventListener('click', () => searchWord());
+    queryInput.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        searchWord();
+      }
+    });
+
+    randomBtn.addEventListener('click', () => {
+      const randomItem = wordData[Math.floor(Math.random() * wordData.length)];
+      queryInput.value = randomItem.word;
+      renderResult(randomItem);
+    });
+
+    renderPopularWords();
+    renderResult(wordData[0]);
+  </script>
+</body>
+</html>
