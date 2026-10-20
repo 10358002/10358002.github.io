@@ -232,6 +232,7 @@
         hitFlash: 0,
         attackTimer: 0,
         attackCooldown: 0,
+        walkCycle: 0,
       };
     }
 
@@ -252,6 +253,7 @@
         hitFlash: 0,
         attackTimer: 0,
         attackCooldown: 0,
+        walkCycle: 0,
       };
     }
 
@@ -335,6 +337,13 @@
       if (player.hitFlash > 0) {
         player.hitFlash -= 1;
       }
+
+      const isMoving = Math.abs(player.vx) > 0.2;
+      if (isMoving && player.onGround) {
+        player.walkCycle += 0.28;
+      } else {
+        player.walkCycle *= 0.8;
+      }
     }
 
     function updateEnemy() {
@@ -378,6 +387,13 @@
 
       if (enemy.hitFlash > 0) {
         enemy.hitFlash -= 1;
+      }
+
+      const isMoving = Math.abs(enemy.vx) > 0.2;
+      if (isMoving && enemy.onGround) {
+        enemy.walkCycle += 0.22;
+      } else {
+        enemy.walkCycle *= 0.8;
       }
 
       if (Math.abs(player.x - enemy.x) < 110 && Math.random() < 0.028 && enemy.attackCooldown <= 0) {
@@ -449,9 +465,12 @@
       const bodyHeight = unit.height;
       const headRadius = 18;
       const torsoHeight = unit.crouching ? 28 : 52;
+      const walkOffset = unit.onGround && Math.abs(unit.vx) > 0.2 ? Math.sin(unit.walkCycle) * 3.5 : 0;
+      const bodyLean = unit.onGround && Math.abs(unit.vx) > 0.2 ? Math.sin(unit.walkCycle) * 8 : 0;
 
       ctx.save();
-      ctx.translate(x, y);
+      ctx.translate(x, y + walkOffset);
+      ctx.rotate(bodyLean * Math.PI / 180);
 
       ctx.fillStyle = 'rgba(15, 23, 42, 0.18)';
       ctx.beginPath();
@@ -469,17 +488,20 @@
       ctx.fill();
       ctx.stroke();
 
+      const armSwing = Math.sin(unit.walkCycle) * 8;
+      const legSwing = Math.sin(unit.walkCycle) * 10;
+
       ctx.beginPath();
       ctx.moveTo(0, -bodyHeight + 28);
       ctx.lineTo(0, -bodyHeight + 28 + torsoHeight);
       ctx.moveTo(0, -bodyHeight + 38);
-      ctx.lineTo(18 * unit.facing, -bodyHeight + 68);
+      ctx.lineTo(18 * unit.facing + armSwing, -bodyHeight + 68);
       ctx.moveTo(0, -bodyHeight + 38);
-      ctx.lineTo(-18 * unit.facing, -bodyHeight + 68);
+      ctx.lineTo(-18 * unit.facing - armSwing, -bodyHeight + 68);
       ctx.moveTo(0, -bodyHeight + 28 + torsoHeight);
-      ctx.lineTo(26 * unit.facing, -bodyHeight + 28 + torsoHeight + 38);
+      ctx.lineTo(26 * unit.facing + legSwing, -bodyHeight + 28 + torsoHeight + 38);
       ctx.moveTo(0, -bodyHeight + 28 + torsoHeight);
-      ctx.lineTo(-26 * unit.facing, -bodyHeight + 28 + torsoHeight + 38);
+      ctx.lineTo(-26 * unit.facing - legSwing, -bodyHeight + 28 + torsoHeight + 38);
       ctx.stroke();
 
       const punchReach = unit.attackTimer > 0 ? 18 : 0;
