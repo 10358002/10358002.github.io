@@ -132,6 +132,12 @@
     const groundY = canvas.height - 70;
     const keys = { left: false, right: false, crouch: false, jump: false };
 
+    const world = {
+      scroll: 0,
+      speed: 330,
+      parallax: 0.2
+    };
+
     let gameState = 'running';
     let elapsed = 0;
     let score = 0;
@@ -168,6 +174,7 @@
 
     function resetGame() {
       obstacles.length = 0;
+      world.scroll = 0;
       elapsed = 0;
       score = 0;
       dodged = 0;
@@ -198,13 +205,13 @@
     function spawnObstacle() {
       const typeRoll = Math.random();
       const minWidth = 26;
-      const maxWidth = 115;
+      const maxWidth = 110;
 
       if (typeRoll < 0.65) {
         const width = randomRange(minWidth, maxWidth);
         const height = randomRange(22, 120);
         obstacles.push({
-          x: canvas.width + 20,
+          x: canvas.width + 30,
           y: groundY - height,
           width,
           height,
@@ -214,9 +221,9 @@
       } else {
         const width = randomRange(62, 150);
         const barHeight = randomRange(12, 18);
-        const clearance = randomRange(48, 110);
+        const clearance = randomRange(52, 110);
         obstacles.push({
-          x: canvas.width + 20,
+          x: canvas.width + 30,
           y: groundY - clearance - barHeight,
           width,
           height: barHeight,
@@ -250,14 +257,15 @@
     function update(dt) {
       if (gameState !== 'running') return;
 
+      const dtSec = dt / 1000;
       elapsed += dt;
+      world.scroll += world.speed * dtSec;
       score = Math.floor((elapsed / 1000) * 30 + dodged * 18);
       updateHUD();
 
-      const moveSpeed = 260 + elapsed * 0.025;
-      const leftForce = (keys.left ? 1 : 0) - (keys.right ? 1 : 0);
-      player.x += leftForce * moveSpeed * dt * 0.8;
-      player.x = clamp(player.x, 30, canvas.width - 150);
+      const moveDir = (keys.right ? 1 : 0) - (keys.left ? 1 : 0);
+      player.x += moveDir * 330 * dtSec;
+      player.x = clamp(player.x, 60, canvas.width - 200);
 
       if (keys.jump && player.grounded) {
         player.vy = -760;
@@ -275,8 +283,8 @@
       }
 
       if (!player.grounded) {
-        player.vy += 1800 * dt;
-        player.y += player.vy * dt;
+        player.vy += 1800 * dtSec;
+        player.y += player.vy * dtSec;
 
         if (player.y + player.height >= groundY) {
           player.y = groundY - player.height;
@@ -301,7 +309,7 @@
 
       for (let i = obstacles.length - 1; i >= 0; i--) {
         const obstacle = obstacles[i];
-        obstacle.x -= (moveSpeed + 40) * dt;
+        obstacle.x -= (world.speed + 40) * dtSec;
 
         if (!obstacle.passed && obstacle.x + obstacle.width < player.x) {
           obstacle.passed = true;
@@ -348,17 +356,19 @@
     }
 
     function drawGround() {
+      const offset = world.scroll;
+
       ctx.fillStyle = '#4d734d';
       ctx.fillRect(0, groundY + 4, canvas.width, canvas.height - groundY);
 
       ctx.strokeStyle = '#e3d5a5';
       ctx.lineWidth = 4;
       ctx.beginPath();
-      ctx.moveTo(0, groundY + 2);
-      ctx.lineTo(canvas.width, groundY + 2);
+      ctx.moveTo(0 - (offset % 44), groundY + 2);
+      ctx.lineTo(canvas.width - (offset % 44), groundY + 2);
       ctx.stroke();
 
-      for (let x = 0; x < canvas.width; x += 44) {
+      for (let x = -((offset % 44) + 44); x < canvas.width + 50; x += 44) {
         ctx.fillStyle = 'rgba(255,255,255,0.18)';
         ctx.fillRect(x, groundY + 8, 12, 8);
       }
@@ -366,15 +376,8 @@
 
     function drawPlayer() {
       const bodyColor = '#e13939';
-      const darkColor = '#9b1d22';
       const headX = player.x + player.width / 2;
       const headY = player.y + 10;
-      const drawHead = () => {
-        ctx.beginPath();
-        ctx.fillStyle = bodyColor;
-        ctx.arc(headX, headY, 12, 0, Math.PI * 2);
-        ctx.fill();
-      };
 
       const drawLine = (x1, y1, x2, y2, width = 5) => {
         ctx.lineWidth = width;
@@ -385,13 +388,15 @@
         ctx.stroke();
       };
 
-      drawHead();
+      ctx.beginPath();
+      ctx.fillStyle = bodyColor;
+      ctx.arc(headX, headY, 12, 0, Math.PI * 2);
+      ctx.fill();
 
       const torsoTopY = player.y + 23;
       const torsoBottomY = player.y + (player.height * 0.52);
       const armY = player.y + 34;
       const legY = player.y + player.height - 6;
-      const crouchOffset = player.grounded && keys.crouch ? 8 : 0;
 
       drawLine(headX, headY + 12, headX, torsoBottomY, 5);
       drawLine(headX - 6, armY + (player.grounded ? 0 : 6), headX - 16, armY + 18, 4);
@@ -414,13 +419,12 @@
 
     function drawObstacle(obstacle) {
       const x = obstacle.x;
-      const y = obstacle.y;
 
       if (obstacle.kind === 'hurdle') {
         ctx.fillStyle = '#66462f';
-        ctx.fillRect(x, y, obstacle.width, obstacle.height);
+        ctx.fillRect(x, obstacle.y, obstacle.width, obstacle.height);
         ctx.fillStyle = '#a26746';
-        ctx.fillRect(x + 6, y + 6, obstacle.width - 12, 4);
+        ctx.fillRect(x + 6, obstacle.y + 6, obstacle.width - 12, 4);
       } else {
         ctx.fillStyle = '#6d4336';
         ctx.fillRect(x, groundY - obstacle.clearance - obstacle.height, obstacle.width, obstacle.height);
@@ -442,7 +446,7 @@
 
       ctx.fillStyle = 'rgba(88, 62, 42, 0.2)';
       for (let i = 0; i < 8; i++) {
-        const hillX = i * 180 + (elapsed * 0.006) % 180;
+        const hillX = i * 180 - (world.scroll * world.parallax) % 180;
         ctx.beginPath();
         ctx.moveTo(hillX, canvas.height);
         ctx.quadraticCurveTo(hillX + 80, canvas.height - 80, hillX + 180, canvas.height);
