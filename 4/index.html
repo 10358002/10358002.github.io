@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>火柴人閃避者</title>
+  <style>
+    :root {
+      --bg-1: #f7dfb2;
+      --bg-2: #d5a46b;
+      --bg-3: #6d4f3b;
+      --panel: rgba(42, 26, 20, 0.55);
+      --panel-border: rgba(83, 52, 40, 0.9);
+      --text: #fff7ec;
+      --gold: #f7d07b;
+      --red: #e13f3f;
+      --red-dark: #a52a2a;
+      --grass: #5f7c4d;
+      --shadow: rgba(33, 15, 8, 0.35);
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background:
+        radial-gradient(circle at top, rgba(255,255,255,0.4), transparent 35%),
+        linear-gradient(180deg, var(--bg-1) 0%, var(--bg-2) 32%, var(--bg-3) 100%);
+      font-family: "Segoe UI", "Microsoft JhengHei", sans-serif;
+      color: var(--text);
+    }
+
+    .game-shell {
+      width: min(96vw, 980px);
+      padding: 18px 18px 12px;
+      border-radius: 22px;
+      background: rgba(53, 39, 28, 0.32);
+      border: 3px solid var(--panel-border);
+      box-shadow: 0 18px 45px var(--shadow);
+      backdrop-filter: blur(2px);
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 16px;
+      padding: 10px 16px;
+      border-radius: 14px;
+      background: var(--panel);
+      border: 2px solid rgba(255,255,255,0.12);
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(1.1rem, 2vw, 2rem);
+      letter-spacing: 0.08em;
+      color: #fff6d9;
+      text-shadow: 0 2px 0 rgba(0,0,0,0.2);
+    }
+
+    .hud {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px 18px;
+      align-items: center;
+      font-size: clamp(0.95rem, 1.6vw, 1.15rem);
+      font-weight: 700;
+    }
+
+    .life {
+      letter-spacing: 1px;
+      color: #ffde7a;
+      text-shadow: 0 2px 0 rgba(0,0,0,0.2);
+    }
+
+    .life span {
+      display: inline-block;
+      min-width: 92px;
+    }
+
+    #gameCanvas {
+      display: block;
+      width: 100%;
+      height: auto;
+      border-radius: 16px;
+      border: 3px solid rgba(65, 42, 26, 0.95);
+      background: linear-gradient(180deg, #f5dd9d 0%, #e8c17d 34%, #8c6d53 35%, #6f5648 100%);
+      box-shadow: inset 0 -8px 18px rgba(0,0,0,0.12);
+    }
+
+    .footer {
+      margin-top: 10px;
+      text-align: center;
+      min-height: 28px;
+      color: #fff5d5;
+      letter-spacing: 0.06em;
+      font-size: 0.95rem;
+      font-weight: 700;
+      text-shadow: 0 2px 0 rgba(0,0,0,0.18);
+    }
+  </style>
+</head>
+<body>
+  <div class="game-shell">
+    <div class="topbar">
+      <h1>火柴人閃避者</h1>
+      <div class="hud">
+        <div>時間：<span id="timeDisplay">0.0s</span></div>
+        <div>分數：<span id="scoreDisplay">0</span></div>
+        <div class="life">血量：<span id="lifeDisplay">♥♥♥</span></div>
+      </div>
+    </div>
+
+    <canvas id="gameCanvas" width="960" height="520"></canvas>
+    <div id="message" class="footer">按 A / D 移動，W 跳躍，S 蹲下，R 重新開始</div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const timeDisplay = document.getElementById('timeDisplay');
+    const scoreDisplay = document.getElementById('scoreDisplay');
+    const lifeDisplay = document.getElementById('lifeDisplay');
+    const message = document.getElementById('message');
+
+    const groundY = canvas.height - 70;
+    const keys = { left: false, right: false, crouch: false, jump: false };
+
+    let gameState = 'running';
+    let elapsed = 0;
+    let score = 0;
+    let dodged = 0;
+    let spawnTimer = 900;
+    let lastTimestamp = 0;
+    let hitCooldown = 0;
+
+    const player = {
+      x: 120,
+      y: 0,
+      width: 28,
+      height: 74,
+      baseHeight: 74,
+      crouchHeight: 48,
+      vy: 0,
+      grounded: true,
+      health: 3,
+      invincible: 0
+    };
+
+    const obstacles = [];
+
+    function resetPlayer() {
+      player.x = 120;
+      player.y = groundY - player.baseHeight;
+      player.height = player.baseHeight;
+      player.vy = 0;
+      player.grounded = true;
+      player.health = 3;
+      player.invincible = 0;
+      hitCooldown = 0;
+    }
+
+    function resetGame() {
+      obstacles.length = 0;
+      elapsed = 0;
+      score = 0;
+      dodged = 0;
+      spawnTimer = 1200;
+      gameState = 'running';
+      message.textContent = '按 A / D 移動，W 跳躍，S 蹲下，R 重新開始';
+      resetPlayer();
+      updateHUD();
+    }
+
+    function clamp(value, min, max) {
+      return Math.min(Math.max(value, min), max);
+    }
+
+    function rectsOverlap(a, b) {
+      return a.x < b.x + b.width &&
+             a.x + a.width > b.x &&
+             a.y < b.y + b.height &&
+             a.y + a.height > b.y;
+    }
+
+    function updateHUD() {
+      timeDisplay.textContent = `${(elapsed / 1000).toFixed(1)}s`;
+      scoreDisplay.textContent = String(score);
+      lifeDisplay.textContent = '♥'.repeat(player.health) + '♡'.repeat(3 - player.health);
+    }
+
+    function spawnObstacle() {
+      const typeRoll = Math.random();
+      const minWidth = 26;
+      const maxWidth = 115;
+
+      if (typeRoll < 0.65) {
+        const width = randomRange(minWidth, maxWidth);
+        const height = randomRange(22, 120);
+        obstacles.push({
+          x: canvas.width + 20,
+          y: groundY - height,
+          width,
+          height,
+          kind: 'hurdle',
+          passed: false
+        });
+      } else {
+        const width = randomRange(62, 150);
+        const barHeight = randomRange(12, 18);
+        const clearance = randomRange(48, 110);
+        obstacles.push({
+          x: canvas.width + 20,
+          y: groundY - clearance - barHeight,
+          width,
+          height: barHeight,
+          kind: 'gate',
+          clearance,
+          passed: false
+        });
+      }
+    }
+
+    function randomRange(min, max) {
+      return min + Math.random() * (max - min);
+    }
+
+    function takeDamage() {
+      if (player.invincible > 0 || gameState !== 'running') return;
+
+      player.health -= 1;
+      player.invincible = 900;
+      updateHUD();
+
+      if (player.health <= 0) {
+        gameState = 'gameover';
+        message.textContent = `遊戲結束！最終分數：${score}，按 R 重玩`;
+        return;
+      }
+
+      message.textContent = `撞到障礙物！還剩 ${player.health} 條血`;
+    }
+
+    function update(dt) {
+      if (gameState !== 'running') return;
+
+      elapsed += dt;
+      score = Math.floor((elapsed / 1000) * 30 + dodged * 18);
+      updateHUD();
+
+      const moveSpeed = 260 + elapsed * 0.025;
+      const leftForce = (keys.left ? 1 : 0) - (keys.right ? 1 : 0);
+      player.x += leftForce * moveSpeed * dt * 0.8;
+      player.x = clamp(player.x, 30, canvas.width - 150);
+
+      if (keys.jump && player.grounded) {
+        player.vy = -760;
+        player.grounded = false;
+      }
+
+      if (keys.crouch && player.grounded) {
+        player.height = player.crouchHeight;
+        player.y = groundY - player.height;
+      } else {
+        player.height = player.baseHeight;
+        if (player.grounded) {
+          player.y = groundY - player.height;
+        }
+      }
+
+      if (!player.grounded) {
+        player.vy += 1800 * dt;
+        player.y += player.vy * dt;
+
+        if (player.y + player.height >= groundY) {
+          player.y = groundY - player.height;
+          player.vy = 0;
+          player.grounded = true;
+        }
+      }
+
+      player.invincible = Math.max(0, player.invincible - dt);
+      if (player.invincible > 0) {
+        message.textContent = '受到攻擊，請小心！';
+      } else if (message.textContent.includes('受到攻擊')) {
+        message.textContent = '按 A / D 移動，W 跳躍，S 蹲下，R 重新開始';
+      }
+
+      spawnTimer -= dt;
+      const difficulty = Math.max(420, 1300 - elapsed * 0.12);
+      if (spawnTimer <= 0) {
+        spawnObstacle();
+        spawnTimer = difficulty + randomRange(0, 420);
+      }
+
+      for (let i = obstacles.length - 1; i >= 0; i--) {
+        const obstacle = obstacles[i];
+        obstacle.x -= (moveSpeed + 40) * dt;
+
+        if (!obstacle.passed && obstacle.x + obstacle.width < player.x) {
+          obstacle.passed = true;
+          dodged += 1;
+          score = Math.floor((elapsed / 1000) * 30 + dodged * 18);
+          updateHUD();
+        }
+
+        const playerBox = {
+          x: player.x + 5,
+          y: player.y + 2,
+          width: player.width - 8,
+          height: player.height - 4
+        };
+
+        let obstacleBox = null;
+
+        if (obstacle.kind === 'hurdle') {
+          obstacleBox = {
+            x: obstacle.x,
+            y: obstacle.y,
+            width: obstacle.width,
+            height: obstacle.height
+          };
+        } else {
+          obstacleBox = {
+            x: obstacle.x,
+            y: groundY - obstacle.clearance - obstacle.height,
+            width: obstacle.width,
+            height: obstacle.height
+          };
+        }
+
+        if (rectsOverlap(playerBox, obstacleBox)) {
+          takeDamage();
+          obstacles.splice(i, 1);
+          continue;
+        }
+
+        if (obstacle.x + obstacle.width < -40) {
+          obstacles.splice(i, 1);
+        }
+      }
+    }
+
+    function drawGround() {
+      ctx.fillStyle = '#4d734d';
+      ctx.fillRect(0, groundY + 4, canvas.width, canvas.height - groundY);
+
+      ctx.strokeStyle = '#e3d5a5';
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(0, groundY + 2);
+      ctx.lineTo(canvas.width, groundY + 2);
+      ctx.stroke();
+
+      for (let x = 0; x < canvas.width; x += 44) {
+        ctx.fillStyle = 'rgba(255,255,255,0.18)';
+        ctx.fillRect(x, groundY + 8, 12, 8);
+      }
+    }
+
+    function drawPlayer() {
+      const bodyColor = '#e13939';
+      const darkColor = '#9b1d22';
+      const headX = player.x + player.width / 2;
+      const headY = player.y + 10;
+      const drawHead = () => {
+        ctx.beginPath();
+        ctx.fillStyle = bodyColor;
+        ctx.arc(headX, headY, 12, 0, Math.PI * 2);
+        ctx.fill();
+      };
+
+      const drawLine = (x1, y1, x2, y2, width = 5) => {
+        ctx.lineWidth = width;
+        ctx.strokeStyle = bodyColor;
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x2, y2);
+        ctx.stroke();
+      };
+
+      drawHead();
+
+      const torsoTopY = player.y + 23;
+      const torsoBottomY = player.y + (player.height * 0.52);
+      const armY = player.y + 34;
+      const legY = player.y + player.height - 6;
+      const crouchOffset = player.grounded && keys.crouch ? 8 : 0;
+
+      drawLine(headX, headY + 12, headX, torsoBottomY, 5);
+      drawLine(headX - 6, armY + (player.grounded ? 0 : 6), headX - 16, armY + 18, 4);
+      drawLine(headX + 6, armY + (player.grounded ? 0 : 6), headX + 16, armY + 18, 4);
+
+      if (keys.crouch && player.grounded) {
+        drawLine(headX, torsoTopY + 10, headX - 10, legY + 10, 4);
+        drawLine(headX, torsoTopY + 10, headX + 10, legY + 10, 4);
+      } else {
+        drawLine(headX, torsoBottomY, headX - 10, legY, 4);
+        drawLine(headX, torsoBottomY, headX + 10, legY, 4);
+      }
+
+      if (player.invincible > 0 && Math.floor(player.invincible / 80) % 2 === 0) {
+        ctx.strokeStyle = '#fff7d8';
+        ctx.lineWidth = 3;
+        ctx.strokeRect(player.x - 4, player.y - 4, player.width + 8, player.height + 8);
+      }
+    }
+
+    function drawObstacle(obstacle) {
+      const x = obstacle.x;
+      const y = obstacle.y;
+
+      if (obstacle.kind === 'hurdle') {
+        ctx.fillStyle = '#66462f';
+        ctx.fillRect(x, y, obstacle.width, obstacle.height);
+        ctx.fillStyle = '#a26746';
+        ctx.fillRect(x + 6, y + 6, obstacle.width - 12, 4);
+      } else {
+        ctx.fillStyle = '#6d4336';
+        ctx.fillRect(x, groundY - obstacle.clearance - obstacle.height, obstacle.width, obstacle.height);
+        ctx.fillStyle = '#a26746';
+        ctx.fillRect(x + 8, groundY - obstacle.clearance - obstacle.height + 2, obstacle.width - 16, 5);
+      }
+    }
+
+    function drawScene() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      const sky = ctx.createLinearGradient(0, 0, 0, canvas.height);
+      sky.addColorStop(0, '#f7deb0');
+      sky.addColorStop(0.38, '#e7bf6a');
+      sky.addColorStop(0.39, '#8d6d55');
+      sky.addColorStop(1, '#6d5449');
+      ctx.fillStyle = sky;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      ctx.fillStyle = 'rgba(88, 62, 42, 0.2)';
+      for (let i = 0; i < 8; i++) {
+        const hillX = i * 180 + (elapsed * 0.006) % 180;
+        ctx.beginPath();
+        ctx.moveTo(hillX, canvas.height);
+        ctx.quadraticCurveTo(hillX + 80, canvas.height - 80, hillX + 180, canvas.height);
+        ctx.fill();
+      }
+
+      drawGround();
+
+      for (const obstacle of obstacles) {
+        drawObstacle(obstacle);
+      }
+
+      drawPlayer();
+    }
+
+    function gameLoop(timestamp) {
+      const dt = Math.min(32, timestamp - lastTimestamp || 16);
+      lastTimestamp = timestamp;
+      update(dt);
+      drawScene();
+      requestAnimationFrame(gameLoop);
+    }
+
+    document.addEventListener('keydown', (event) => {
+      const code = event.code;
+      if (['KeyA', 'KeyD', 'KeyS', 'KeyW', 'KeyR', 'Space'].includes(code)) {
+        event.preventDefault();
+      }
+
+      if (code === 'KeyA') keys.left = true;
+      if (code === 'KeyD') keys.right = true;
+      if (code === 'KeyS') keys.crouch = true;
+      if (code === 'KeyW') keys.jump = true;
+      if (code === 'KeyR' && gameState === 'gameover') resetGame();
+    });
+
+    document.addEventListener('keyup', (event) => {
+      const code = event.code;
+      if (code === 'KeyA') keys.left = false;
+      if (code === 'KeyD') keys.right = false;
+      if (code === 'KeyS') keys.crouch = false;
+      if (code === 'KeyW') keys.jump = false;
+    });
+
+    resetGame();
+    requestAnimationFrame(gameLoop);
+  </script>
+</body>
+</html>
