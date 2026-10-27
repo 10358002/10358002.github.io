@@ -502,10 +502,13 @@
       }
 
       spawnTimer -= dt;
-      const difficulty = Math.max(420, 1300 - elapsed * 0.12);
+      const baseInterval = 1450;
+      const minInterval = 520;
+      const speedUpFactor = Math.min(0.9, elapsed / 40000);
+      const nextInterval = Math.max(minInterval, baseInterval - elapsed * 0.08 - speedUpFactor * 350);
       if (spawnTimer <= 0) {
         spawnObstacle();
-        spawnTimer = difficulty + randomRange(0, 420);
+        spawnTimer = nextInterval + randomRange(0, 280);
       }
 
       for (let i = obstacles.length - 1; i >= 0; i--) {
