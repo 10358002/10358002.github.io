@@ -3,307 +3,538 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>教育部詞語同義詞查詢</title>
+  <title>教育部同義詞查詢</title>
   <style>
     :root {
-      --bg: #f5f7fb;
-      --panel: #ffffff;
-      --primary: #1b6dc1;
-      --primary-dark: #14539e;
-      --accent: #eaf3ff;
-      --text: #1f2937;
-      --muted: #6b7280;
-      --border: #dfe7f4;
-      --success: #1f9d72;
-      --warning: #f59e0b;
-      --shadow: 0 18px 40px rgba(31, 66, 118, 0.12);
+      --bg: #edf3ff;
+      --bg-strong: #dfeeff;
+      --panel: rgba(255, 255, 255, 0.76);
+      --panel-solid: #ffffff;
+      --primary: #1b6ef3;
+      --primary-deep: #1049b5;
+      --secondary: #e8f1ff;
+      --line: rgba(78, 106, 150, 0.18);
+      --text: #1d2a3a;
+      --muted: #64748b;
+      --success: #1dbf9a;
+      --shadow: 0 24px 60px rgba(24, 69, 146, 0.16);
+      --radius-xl: 30px;
+      --radius-lg: 22px;
+      --radius-md: 16px;
     }
 
     * { box-sizing: border-box; }
 
-    body {
+    html, body {
       margin: 0;
+      min-height: 100%;
       font-family: "Segoe UI", "Noto Sans TC", "Microsoft JhengHei", Arial, sans-serif;
-      background: linear-gradient(180deg, #eef5ff 0%, var(--bg) 100%);
+      background:
+        radial-gradient(circle at top left, rgba(97, 171, 255, 0.18), transparent 32%),
+        linear-gradient(180deg, #f4f8ff 0%, var(--bg) 100%);
       color: var(--text);
     }
 
-    .container {
-      max-width: 1100px;
-      margin: 0 auto;
-      padding: 28px 18px 60px;
-    }
-
-    .header {
-      background: linear-gradient(135deg, var(--primary) 0%, #2a7de1 100%);
-      color: white;
-      border-radius: 24px;
-      padding: 32px 28px;
-      box-shadow: var(--shadow);
-      margin-bottom: 24px;
-    }
-
-    .header h1 {
-      margin: 0 0 10px;
-      font-size: clamp(2rem, 4vw, 2.8rem);
-      line-height: 1.2;
-    }
-
-    .header p {
-      margin: 0;
-      opacity: 0.92;
-      font-size: 1rem;
-    }
-
-    .search-box {
-      background: var(--panel);
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      padding: 22px;
-      box-shadow: var(--shadow);
-      margin-bottom: 22px;
-    }
-
-    .search-row {
+    body {
       display: flex;
-      gap: 12px;
-      flex-wrap: wrap;
+      justify-content: center;
+      padding: 36px 18px 60px;
     }
 
-    input[type="text"] {
-      flex: 1 1 420px;
-      min-width: 230px;
-      height: 56px;
-      border: 1px solid var(--border);
-      border-radius: 14px;
-      padding: 0 18px;
-      font-size: 1.05rem;
-      outline: none;
-      transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    .page-shell {
+      width: min(1180px, 100%);
     }
 
-    input[type="text"]:focus {
-      border-color: var(--primary);
-      box-shadow: 0 0 0 4px rgba(27, 109, 193, 0.12);
-    }
-
-    button {
-      border: none;
-      border-radius: 14px;
-      padding: 0 22px;
-      height: 56px;
-      font-size: 1rem;
-      font-weight: 700;
-      cursor: pointer;
-      transition: transform 0.15s ease, opacity 0.15s ease;
-    }
-
-    button:hover { transform: translateY(-1px); }
-    button:active { transform: translateY(0); }
-
-    .primary-btn {
-      background: var(--primary);
-      color: white;
-    }
-
-    .primary-btn:hover { background: var(--primary-dark); }
-
-    .secondary-btn {
-      background: #edf2f7;
-      color: var(--text);
-    }
-
-    .result-card {
-      background: var(--panel);
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      padding: 26px 22px;
-      box-shadow: var(--shadow);
-    }
-
-    .result-top {
+    .topbar {
       display: flex;
+      align-items: center;
       justify-content: space-between;
+      gap: 18px;
+      padding: 18px 8px 26px;
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      font-weight: 800;
+      font-size: 1.2rem;
+      color: var(--text);
+    }
+
+    .brand-mark {
+      width: 38px;
+      height: 38px;
+      display: grid;
+      place-items: center;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--primary), #53b6ff);
+      color: #fff;
+      box-shadow: 0 10px 20px rgba(27, 110, 243, 0.25);
+      font-size: 1.1rem;
+    }
+
+    .nav {
+      display: flex;
       align-items: center;
       gap: 12px;
       flex-wrap: wrap;
-      margin-bottom: 18px;
     }
 
-    .term {
-      font-size: clamp(1.8rem, 3vw, 2.6rem);
-      font-weight: 800;
-      color: var(--primary-dark);
-      margin: 0;
-    }
-
-    .tag {
-      background: var(--accent);
-      color: var(--primary-dark);
+    .nav a {
+      color: var(--muted);
+      text-decoration: none;
+      font-weight: 700;
+      padding: 10px 14px;
       border-radius: 999px;
-      padding: 8px 14px;
-      font-size: 0.8rem;
+      transition: 0.2s ease;
+    }
+
+    .nav a:hover {
+      background: rgba(27, 110, 243, 0.08);
+      color: var(--primary-deep);
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: 1.2fr 0.9fr;
+      gap: 26px;
+      padding: 18px 0 24px;
+    }
+
+    .hero-copy,
+    .result-panel,
+    .info-card {
+      background: var(--panel);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255,255,255,0.7);
+      box-shadow: var(--shadow);
+    }
+
+    .hero-copy {
+      border-radius: var(--radius-xl);
+      padding: 40px 32px 28px;
+      background:
+        linear-gradient(135deg, rgba(255,255,255,0.82), rgba(234,244,255,0.9));
+      min-height: 420px;
+    }
+
+    .eyebrow {
+      display: inline-block;
+      margin: 0 0 16px;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(27, 110, 243, 0.08);
+      color: var(--primary-deep);
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(2.2rem, 4vw, 4rem);
+      line-height: 1.08;
+      letter-spacing: -0.05em;
+      color: #0f172a;
+    }
+
+    .lead {
+      margin: 18px 0 26px;
+      max-width: 560px;
+      font-size: 1.08rem;
+      line-height: 1.8;
+      color: var(--muted);
+    }
+
+    .search-panel {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: rgba(255,255,255,0.84);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 12px 12px 12px 18px;
+      box-shadow: 0 12px 32px rgba(32, 80, 145, 0.1);
+      max-width: 610px;
+    }
+
+    .search-panel input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      font-size: 1.08rem;
+      color: var(--text);
+      min-width: 0;
+      padding: 12px 4px;
+    }
+
+    .search-panel input::placeholder {
+      color: #93a4ba;
+    }
+
+    .primary-btn,
+    .secondary-btn,
+    .word-pill {
+      appearance: none;
+      border: none;
+      border-radius: 14px;
+      cursor: pointer;
+      transition: transform 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease;
+      font-family: inherit;
+    }
+
+    .primary-btn {
+      background: linear-gradient(135deg, var(--primary), #4c9cff);
+      color: #fff;
+      padding: 16px 24px;
+      font-weight: 800;
+      min-width: 138px;
+      box-shadow: 0 14px 28px rgba(27, 110, 243, 0.28);
+    }
+
+    .secondary-btn {
+      background: #eef4ff;
+      color: var(--primary-deep);
+      padding: 14px 18px;
       font-weight: 700;
     }
 
-    .synonym-list {
+    .primary-btn:hover,
+    .secondary-btn:hover,
+    .word-pill:hover {
+      transform: translateY(-1px);
+    }
+
+    .chip-row {
       display: flex;
       flex-wrap: wrap;
       gap: 10px;
-      margin: 18px 0 22px;
+      margin-top: 22px;
+    }
+
+    .word-pill {
+      background: rgba(27, 110, 243, 0.07);
+      color: var(--primary-deep);
+      font-size: 0.9rem;
+      font-weight: 700;
+      padding: 10px 14px;
+    }
+
+    .result-panel {
+      border-radius: var(--radius-xl);
+      padding: 26px 22px 20px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.96), rgba(239,246,255,0.92));
+      min-height: 420px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .result-panel::before {
+      content: "";
+      position: absolute;
+      inset: 0 auto auto 0;
+      width: 100%;
+      height: 140px;
+      background: linear-gradient(180deg, rgba(96, 161, 255, 0.12), transparent);
+    }
+
+    .result-header {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 18px;
+    }
+
+    .result-tag {
+      display: inline-flex;
+      align-items: center;
+      padding: 8px 12px;
+      border-radius: 999px;
+      background: rgba(27, 110, 243, 0.08);
+      color: var(--primary-deep);
+      font-size: 0.76rem;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+    }
+
+    .official-link {
+      color: var(--primary-deep);
+      font-weight: 700;
+      text-decoration: none;
+      font-size: 0.88rem;
+    }
+
+    .result-panel h2 {
+      position: relative;
+      z-index: 1;
+      margin: 0;
+      font-size: clamp(2rem, 2.6vw, 2.8rem);
+      line-height: 1.2;
+      letter-spacing: -0.04em;
+      color: #10254a;
+    }
+
+    .result-note {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      margin: 18px 0 16px;
+      color: var(--muted);
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .synonym-list {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 18px;
     }
 
     .synonym-item {
-      background: #f8fafc;
-      border: 1px solid var(--border);
-      border-radius: 999px;
-      padding: 10px 14px;
-      font-weight: 600;
+      background: #f4f8ff;
+      border: 1px solid rgba(27, 110, 243, 0.12);
       color: var(--text);
+      padding: 9px 14px;
+      border-radius: 999px;
+      font-size: 0.96rem;
+      font-weight: 700;
+    }
+
+    .description {
+      position: relative;
+      z-index: 1;
+      margin: 0;
+      line-height: 1.8;
+      color: var(--muted);
+      font-size: 1rem;
+      min-height: 72px;
+    }
+
+    .empty-box,
+    .suggestion-box {
+      position: relative;
+      z-index: 1;
+      margin-top: 18px;
+      padding: 14px 16px;
+      border-radius: 14px;
+      font-size: 0.96rem;
+      line-height: 1.7;
+      border: 1px solid transparent;
+    }
+
+    .empty-box {
+      background: #fff2f2;
+      border-color: #f8c9c9;
+      color: #a43838;
+    }
+
+    .suggestion-box {
+      background: #eef8ff;
+      border-color: #cfe7ff;
+      color: #15498e;
+    }
+
+    .hidden {
+      display: none;
     }
 
     .info-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-      gap: 16px;
-      margin-top: 18px;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 22px;
+      margin-top: 26px;
     }
 
-    .info-box {
-      background: #f8fbff;
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 16px;
+    .info-card {
+      border-radius: var(--radius-lg);
+      padding: 22px 18px;
+      background: rgba(255,255,255,0.78);
     }
 
-    .info-box h3 {
+    .info-card .label {
+      margin: 0 0 12px;
+      font-size: 0.72rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      color: var(--primary-deep);
+      text-transform: uppercase;
+    }
+
+    .info-card h3 {
       margin: 0 0 10px;
-      font-size: 1rem;
-      color: var(--primary-dark);
-    }
-
-    .info-box p {
-      margin: 0;
-      line-height: 1.8;
+      font-size: 1.15rem;
       color: var(--text);
     }
 
-    .source-list {
+    .info-card p,
+    .info-card li {
+      margin: 0;
+      color: var(--muted);
+      line-height: 1.8;
+      font-size: 0.96rem;
+    }
+
+    .info-card ul {
       list-style: none;
       padding: 0;
       margin: 0;
       display: flex;
       flex-direction: column;
-      gap: 10px;
+      gap: 8px;
     }
 
-    .source-list a {
+    .info-card a {
       color: var(--primary);
       text-decoration: none;
-      word-break: break-all;
+      font-weight: 700;
     }
 
-    .source-list a:hover { text-decoration: underline; }
-
-    .suggestion-box, .empty-box {
-      margin-top: 18px;
-      padding: 16px 18px;
-      border-radius: 12px;
-      background: #fffaf0;
-      border: 1px solid #f6dca8;
-      color: #7c4d09;
-    }
-
-    .empty-box {
-      background: #fdf2f2;
-      border-color: #f7c5c5;
-      color: #8b1d1d;
-    }
-
-    .popular-words {
-      margin-top: 22px;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-    }
-
-    .word-pill {
-      background: var(--panel);
-      border: 1px solid var(--border);
-      color: var(--text);
-      border-radius: 999px;
-      padding: 10px 14px;
-      font-weight: 600;
-      cursor: pointer;
+    .info-card a:hover {
+      text-decoration: underline;
     }
 
     .footer-note {
-      margin-top: 30px;
+      margin-top: 26px;
+      text-align: center;
       color: var(--muted);
-      font-size: 0.92rem;
       line-height: 1.8;
+      font-size: 0.92rem;
     }
 
-    .hidden { display: none; }
+    @media (max-width: 920px) {
+      .hero {
+        grid-template-columns: 1fr;
+      }
 
-    @media (max-width: 640px) {
-      .header, .search-box, .result-card {
-        border-radius: 16px;
+      .info-grid {
+        grid-template-columns: 1fr;
       }
-      .search-row {
+    }
+
+    @media (max-width: 620px) {
+      body {
+        padding-left: 12px;
+        padding-right: 12px;
+      }
+
+      .topbar {
         flex-direction: column;
+        align-items: flex-start;
       }
-      button {
+
+      .nav {
         width: 100%;
+      }
+
+      .search-panel {
+        flex-direction: column;
+        align-items: stretch;
+        padding: 14px;
+      }
+
+      .primary-btn,
+      .secondary-btn {
+        width: 100%;
+      }
+
+      .hero-copy,
+      .result-panel {
+        padding-left: 18px;
+        padding-right: 18px;
       }
     }
   </style>
 </head>
 <body>
-  <div class="container">
-    <header class="header">
-      <h1>教育部詞語同義詞查詢</h1>
-      <p>以教育部國語辭典、重編國語辭典修訂本與相關公開辭典資料為主，協助查詢詞語近義詞與語意接近的字詞。</p>
+  <div class="page-shell">
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-mark">語</span>
+        <span>教育部同義詞查詢</span>
+      </div>
+
+      <nav class="nav" aria-label="主導覽">
+        <a href="https://dict.revised.moe.edu.tw/search.jsp?la=0&powerMode=0" target="_blank" rel="noopener noreferrer">官方資料庫</a>
+        <a href="#popularWords">熱門詞</a>
+        <a href="#searchSection">查詢</a>
+      </nav>
     </header>
 
-    <section class="search-box">
-      <div class="search-row">
-        <input id="queryInput" type="text" placeholder="請輸入詞語，例如：快樂、努力、聰明" aria-label="查詢詞語" />
-        <button id="searchBtn" class="primary-btn" type="button">查詢同義詞</button>
-        <button id="randomBtn" class="secondary-btn" type="button">隨機推薦</button>
-      </div>
-      <div id="suggestionBox" class="suggestion-box hidden"></div>
-    </section>
+    <main class="hero">
+      <section class="hero-copy" id="searchSection">
+        <p class="eyebrow">official source</p>
+        <h1>找出更貼切的中文詞語</h1>
+        <p class="lead">依照教育部辭典與中文語意整理，協助你在寫作、報告與日常溝通時，快速找到適合的近義詞與語意相近字詞。</p>
 
-    <main class="result-card" id="resultCard">
-      <div class="result-top">
-        <h2 class="term" id="termText">請輸入詞語</h2>
-        <span class="tag">教育部資料整理</span>
-      </div>
-
-      <div id="emptyBox" class="empty-box hidden">目前沒有找到符合的詞語，請試試下面的熱門詞。</div>
-
-      <div class="synonym-list" id="synonymList"></div>
-
-      <div class="info-grid">
-        <div class="info-box">
-          <h3>說明</h3>
-          <p id="descriptionText">輸入中文詞語後，系統會顯示其近義詞與常見的同義語意。</p>
+        <div class="search-panel">
+          <input id="queryInput" type="text" placeholder="請輸入詞語，例如：快樂、努力、安靜" aria-label="查詢詞語" />
+          <button id="searchBtn" class="primary-btn" type="button">查詢</button>
         </div>
-        <div class="info-box">
-          <h3>資料來源</h3>
-          <ul class="source-list">
-            <li><a href="https://dict.revised.moe.edu.tw/" target="_blank" rel="noopener noreferrer">教育部《重編國語辭典修訂本》</a></li>
-            <li><a href="https://www.moe.gov.tw/" target="_blank" rel="noopener noreferrer">教育部官方網站</a></li>
-          </ul>
+
+        <div class="chip-row" id="popularWords" aria-label="熱門字詞"></div>
+      </section>
+
+      <aside class="result-panel" aria-live="polite">
+        <div class="result-header">
+          <span class="result-tag">查詢結果</span>
+          <a class="official-link" href="https://dict.revised.moe.edu.tw/search.jsp?la=0&powerMode=0" target="_blank" rel="noopener noreferrer">資料來源</a>
         </div>
-      </div>
+
+        <h2 id="termText">快樂</h2>
+
+        <div class="result-note">
+          <span>近義詞</span>
+          <span>教育部資料整理</span>
+        </div>
+
+        <div class="synonym-list" id="synonymList"></div>
+        <p id="descriptionText" class="description"></p>
+
+        <div id="emptyBox" class="empty-box hidden"></div>
+        <div id="suggestionBox" class="suggestion-box hidden"></div>
+      </aside>
     </main>
 
-    <div class="popular-words" id="popularWords"></div>
+    <section class="info-grid" aria-label="資料資訊">
+      <article class="info-card">
+        <p class="label">寫作建議</p>
+        <h3>細微語氣差異</h3>
+        <p>近義詞雖然接近，但在語境中仍可能帶出不同情緒與強度，建議搭配實際句子一起判斷。</p>
+      </article>
+
+      <article class="info-card">
+        <p class="label">資料來源</p>
+        <h3>教育部辭典資料</h3>
+        <ul>
+          <li><a href="https://dict.revised.moe.edu.tw/search.jsp?la=0&powerMode=0" target="_blank" rel="noopener noreferrer">重編國語辭典修訂本</a></li>
+          <li><a href="https://dict.mini.moe.edu.tw/" target="_blank" rel="noopener noreferrer">國語小字典</a></li>
+        </ul>
+      </article>
+
+      <article class="info-card">
+        <p class="label">常用詞</p>
+        <h3>熱門查詢</h3>
+        <p>可直接點擊下方熱門詞，快速切換至常用語詞並查看同義詞整理。</p>
+      </article>
+    </section>
 
     <div class="footer-note">
-      本站資料以教育部公開辭典與官方網站內容為主，並以中文近義詞整理方式提供查詢參考，適合日常寫作與語詞選擇之用。詞意可能因使用情境而有細微差異，建議搭配實際語境判斷。
+      本頁面資料來源以教育部公開辭典與官方網站內容為主，並依中文近義詞整理方式提供查詢參考。詞義可能會因語境不同而產生細微差異，建議搭配實際使用情境判斷。
     </div>
   </div>
 
@@ -368,27 +599,11 @@
         word: '困難',
         synonyms: ['艱難', '棘手', '艱鉅', '困苦', '難題'],
         description: '形容事情不容易完成或處理。'
-      },
-      {
-        word: '快速',
-        synonyms: ['迅速', '敏捷', '神速', '即時', '快捷'],
-        description: '形容動作或進程進行得很快。'
-      },
-      {
-        word: '平安',
-        synonyms: ['安穩', '安好', '泰然', '安全', '寧靜'],
-        description: '形容沒有意外、狀態穩定良好。'
-      },
-      {
-        word: '珍惜',
-        synonyms: ['重視', '愛護', '顧惜', '珍重', '看重'],
-        description: '強調對重要事物給予重視或保護。'
       }
     ];
 
     const queryInput = document.getElementById('queryInput');
     const searchBtn = document.getElementById('searchBtn');
-    const randomBtn = document.getElementById('randomBtn');
     const synonymList = document.getElementById('synonymList');
     const termText = document.getElementById('termText');
     const descriptionText = document.getElementById('descriptionText');
@@ -415,6 +630,25 @@
       });
     }
 
+    function clearMessages() {
+      emptyBox.classList.add('hidden');
+      suggestionBox.classList.add('hidden');
+    }
+
+    function renderResult(item) {
+      termText.textContent = item.word;
+      descriptionText.textContent = item.description;
+      clearMessages();
+
+      synonymList.innerHTML = '';
+      item.synonyms.forEach(synonym => {
+        const span = document.createElement('span');
+        span.className = 'synonym-item';
+        span.textContent = synonym;
+        synonymList.appendChild(span);
+      });
+    }
+
     function showNoResult(message) {
       emptyBox.textContent = message;
       emptyBox.classList.remove('hidden');
@@ -422,6 +656,25 @@
       termText.textContent = '查無結果';
       descriptionText.textContent = '請確認詞語是否正確，或選擇下方熱門詞進行檢索。';
       suggestionBox.classList.add('hidden');
+    }
+
+    function renderSuggestion(matches, keyword) {
+      const selected = matches[0];
+      termText.textContent = selected.word;
+      descriptionText.textContent = selected.description;
+      clearMessages();
+
+      synonymList.innerHTML = '';
+      selected.synonyms.forEach(synonym => {
+        const span = document.createElement('span');
+        span.className = 'synonym-item';
+        span.textContent = synonym;
+        synonymList.appendChild(span);
+      });
+
+      const suggestionText = `您輸入的是「${keyword}」，系統顯示最接近的詞彙為「${selected.word}」。`;
+      suggestionBox.textContent = suggestionText;
+      suggestionBox.classList.remove('hidden');
     }
 
     function searchWord(inputWord = queryInput.value.trim()) {
@@ -432,7 +685,6 @@
       }
 
       const exactMatch = wordData.find(item => normalizeText(item.word) === normalizeText(keyword));
-
       if (exactMatch) {
         renderResult(exactMatch);
         return;
@@ -452,51 +704,11 @@
       showNoResult('目前沒有找到符合的詞語，建議改用常見字詞或參考教育部辭典進一步查詢。');
     }
 
-    function renderResult(item) {
-      termText.textContent = item.word;
-      descriptionText.textContent = item.description;
-      emptyBox.classList.add('hidden');
-      suggestionBox.classList.add('hidden');
-
-      synonymList.innerHTML = '';
-      item.synonyms.forEach(synonym => {
-        const span = document.createElement('span');
-        span.className = 'synonym-item';
-        span.textContent = synonym;
-        synonymList.appendChild(span);
-      });
-    }
-
-    function renderSuggestion(matches, keyword) {
-      const selected = matches[0];
-      termText.textContent = selected.word;
-      descriptionText.textContent = selected.description;
-      emptyBox.classList.add('hidden');
-
-      synonymList.innerHTML = '';
-      selected.synonyms.forEach(synonym => {
-        const span = document.createElement('span');
-        span.className = 'synonym-item';
-        span.textContent = synonym;
-        synonymList.appendChild(span);
-      });
-
-      const suggestionText = `您輸入的是「${keyword}」，系統顯示最接近的詞彙為「${selected.word}」。`;
-      suggestionBox.textContent = suggestionText;
-      suggestionBox.classList.remove('hidden');
-    }
-
     searchBtn.addEventListener('click', () => searchWord());
     queryInput.addEventListener('keydown', (event) => {
       if (event.key === 'Enter') {
         searchWord();
       }
-    });
-
-    randomBtn.addEventListener('click', () => {
-      const randomItem = wordData[Math.floor(Math.random() * wordData.length)];
-      queryInput.value = randomItem.word;
-      renderResult(randomItem);
     });
 
     renderPopularWords();
