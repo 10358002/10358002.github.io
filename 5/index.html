@@ -86,6 +86,12 @@
       color: #f5fbff;
     }
 
+    .life-pill {
+      color: #ffd95a;
+      font-weight: 900;
+      letter-spacing: 0.05em;
+    }
+
     canvas {
       display: block;
       width: 100vw;
@@ -293,6 +299,7 @@
         <div>時間：<span id="timeValue">0.0s</span></div>
         <div>分數：<span id="scoreValue">0</span></div>
         <div>最高：<span id="bestValue">0</span></div>
+        <div class="life-pill">生命：<span id="lifeValue">♥♥♥</span></div>
       </div>
     </div>
 
@@ -337,6 +344,7 @@
     const timeValue = document.getElementById('timeValue');
     const scoreValue = document.getElementById('scoreValue');
     const bestValue = document.getElementById('bestValue');
+    const lifeValue = document.getElementById('lifeValue');
     const toast = document.getElementById('toast');
     const configButton = document.getElementById('configButton');
     const keyPanel = document.getElementById('keyPanel');
@@ -367,7 +375,7 @@
       best: Number(storage.getItem(BEST_KEY)) || 0,
       spawnTimer: 700,
       hitFlash: 0,
-      worldSpeed: 320,
+      worldSpeed: 260,
       groundY: 0,
       musicStep: 0,
       overlayVisible: true
@@ -382,7 +390,9 @@
       grounded: true,
       jumpForce: 760,
       moveSpeed: 360,
-      hue: '#ff6b57'
+      hue: '#ff6b57',
+      lives: 3,
+      invincible: 0
     };
 
     const obstacles = [];
@@ -532,14 +542,16 @@
       particles.length = 0;
       state.time = 0;
       state.score = 0;
-      state.spawnTimer = 700;
+      state.spawnTimer = 1500;
       state.hitFlash = 0;
-      state.worldSpeed = 320;
+      state.worldSpeed = 260;
       state.musicStep = 0;
       player.x = 120;
       player.y = state.groundY - player.h;
       player.vy = 0;
       player.grounded = true;
+      player.lives = 3;
+      player.invincible = 0;
       input.left = false;
       input.right = false;
       input.jump = false;
@@ -587,6 +599,7 @@
       timeValue.textContent = `${(state.time / 1000).toFixed(1)}s`;
       scoreValue.textContent = String(state.score);
       bestValue.textContent = String(state.best);
+      lifeValue.textContent = '♥'.repeat(player.lives) + '♡'.repeat(3 - player.lives);
     }
 
     function saveBestScore() {
@@ -613,6 +626,10 @@
 
     function randomRange(min, max) {
       return min + Math.random() * (max - min);
+    }
+
+    function clamp(value, min, max) {
+      return Math.min(Math.max(value, min), max);
     }
 
     function rectOverlap(a, b) {
@@ -682,19 +699,37 @@
       }
     }
 
+    function handleHit() {
+      if (player.invincible > 0 || state.phase !== 'playing') return;
+
+      player.lives -= 1;
+      player.invincible = 1200;
+      state.hitFlash = 0.8;
+      playSfx('hit');
+      toast.textContent = `撞到了！還剩 ${player.lives} 條命`;
+      updateHUD();
+
+      if (player.lives <= 0) {
+        endGame();
+        return;
+      }
+
+      spawnParticle(player.x + player.w / 2, player.y + player.h / 2, '#ff5959', 20);
+    }
+
     function update(dt) {
       if (state.phase !== 'playing') return;
 
       state.time += dt;
-      state.score = Math.floor(state.time / 120);
-      const scoreLevel = Math.floor(state.score / 100);
-      state.worldSpeed = 320 + scoreLevel * 80 + state.time * 0.012;
-      const intervalBase = Math.max(420, 1300 - state.time * 0.06 - scoreLevel * 140);
+      state.score = Math.floor(state.time / 180);
+      const scoreScale = Math.min(state.score, 800);
+      state.worldSpeed = 240 + scoreScale * 0.8 + state.time * 0.009;
+      const spawnInterval = clamp(1550 - scoreScale * 7, 620, 1550);
       state.spawnTimer -= dt;
 
       if (state.spawnTimer <= 0) {
         spawnObstacle();
-        state.spawnTimer = intervalBase + randomRange(80, 180);
+        state.spawnTimer = spawnInterval + randomRange(80, 180);
       }
 
       saveBestScore();
@@ -712,6 +747,11 @@
         player.grounded = true;
       }
 
+      player.invincible = Math.max(0, player.invincible - dt);
+      if (player.invincible > 0 && Math.floor(player.invincible / 100) % 2 === 0) {
+        state.hitFlash = 0.25;
+      }
+
       for (let i = obstacles.length - 1; i >= 0; i--) {
         const obstacle = obstacles[i];
         obstacle.x -= state.worldSpeed * (dt / 1000);
@@ -725,10 +765,9 @@
         const obstacleBox = { x: obstacle.x, y: obstacle.y, w: obstacle.w, h: obstacle.h };
 
         if (rectOverlap(playerBox, obstacleBox)) {
-          playSfx('hit');
-          state.hitFlash = 0.8;
-          endGame();
-          break;
+          handleHit();
+          obstacles.splice(i, 1);
+          continue;
         }
       }
 
