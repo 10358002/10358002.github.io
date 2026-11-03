@@ -200,6 +200,84 @@
       padding: 20px;
     }
 
+    .overlay {
+      position: absolute;
+      inset: 0;
+      z-index: 30;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(5, 13, 20, 0.42);
+      backdrop-filter: blur(2px);
+    }
+
+    .overlay.hidden {
+      display: none;
+    }
+
+    .menu-panel {
+      width: min(440px, 82vw);
+      padding: 30px 22px 20px;
+      border-radius: 22px;
+      background: rgba(12, 22, 34, 0.82);
+      border: 1px solid rgba(255,255,255,0.18);
+      text-align: center;
+      box-shadow: 0 18px 28px rgba(0,0,0,0.24);
+    }
+
+    .menu-panel h2 {
+      margin: 0 0 12px;
+      font-size: clamp(1.8rem, 4vw, 2.6rem);
+      letter-spacing: 0.08em;
+    }
+
+    .menu-panel p {
+      margin: 0 0 18px;
+      color: rgba(255,255,255,0.84);
+      line-height: 1.7;
+      font-weight: 600;
+    }
+
+    .menu-buttons {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .action-btn {
+      border: 0;
+      border-radius: 12px;
+      padding: 12px 18px;
+      font-size: 1rem;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      cursor: pointer;
+      color: white;
+      background: linear-gradient(180deg, #3a9bf5, #267be0);
+      box-shadow: 0 10px 18px rgba(0,0,0,0.18);
+    }
+
+    .action-btn.secondary {
+      background: linear-gradient(180deg, #ffb052, #f38d2e);
+    }
+
+    .pause-btn {
+      position: absolute;
+      right: 16px;
+      top: 84px;
+      z-index: 12;
+      width: 42px;
+      height: 42px;
+      border: 0;
+      border-radius: 12px;
+      background: rgba(9, 18, 29, 0.68);
+      color: white;
+      font-size: 1.2rem;
+      font-weight: 900;
+      cursor: pointer;
+    }
+
     @media (orientation: portrait) {
       .rotate-tip {
         display: flex;
@@ -218,9 +296,21 @@
       </div>
     </div>
 
+    <button id="pauseBtn" class="pause-btn" type="button" aria-label="暫停遊戲">⏸</button>
     <canvas id="gameCanvas"></canvas>
     <div id="toast" class="toast">觸碰螢幕可跳躍，電腦請用自訂鍵盤操控</div>
     <button id="configButton" class="config-btn" type="button">鍵盤設定</button>
+
+    <div id="overlay" class="overlay">
+      <div class="menu-panel">
+        <h2 id="menuTitle">開始遊戲</h2>
+        <p id="menuText">避開障礙物，衝到更高分！</p>
+        <div class="menu-buttons">
+          <button id="primaryBtn" class="action-btn" type="button">開始遊戲</button>
+          <button id="secondaryBtn" class="action-btn secondary" type="button">再來一次</button>
+        </div>
+      </div>
+    </div>
 
     <div id="keyPanel" class="key-panel" aria-label="鍵盤設定">
       <div class="key-row">
@@ -250,6 +340,12 @@
     const toast = document.getElementById('toast');
     const configButton = document.getElementById('configButton');
     const keyPanel = document.getElementById('keyPanel');
+    const overlay = document.getElementById('overlay');
+    const menuTitle = document.getElementById('menuTitle');
+    const menuText = document.getElementById('menuText');
+    const primaryBtn = document.getElementById('primaryBtn');
+    const secondaryBtn = document.getElementById('secondaryBtn');
+    const pauseBtn = document.getElementById('pauseBtn');
 
     const BEST_KEY = 'fullScreenRunnerBest';
     const KEY_MAP_KEY = 'fullScreenRunnerKeyMap';
@@ -261,18 +357,20 @@
 
     let waitingForKey = null;
     let lastTime = 0;
-    let gameStarted = false;
-    let gameOver = false;
+    let audioCtx = null;
+    let musicTimer = null;
 
     const state = {
+      phase: 'menu',
       time: 0,
       score: 0,
       best: Number(storage.getItem(BEST_KEY)) || 0,
-      spawnTimer: 0,
+      spawnTimer: 700,
       hitFlash: 0,
       worldSpeed: 320,
       groundY: 0,
-      cloudSpeed: 0.4
+      musicStep: 0,
+      overlayVisible: true
     };
 
     const player = {
@@ -289,6 +387,82 @@
 
     const obstacles = [];
     const particles = [];
+
+    function ensureAudio() {
+      if (!audioCtx) {
+        const AudioCtor = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtor) return null;
+        audioCtx = new AudioCtor();
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+      return audioCtx;
+    }
+
+    function playTone({ frequency = 440, duration = 0.16, type = 'sine', gain = 0.05, slideTo = null } = {}) {
+      const context = ensureAudio();
+      if (!context) return;
+      const oscillator = context.createOscillator();
+      const volume = context.createGain();
+      const now = context.currentTime;
+      oscillator.type = type;
+      oscillator.frequency.setValueAtTime(frequency, now);
+      if (slideTo) oscillator.frequency.linearRampToValueAtTime(slideTo, now + duration);
+      volume.gain.setValueAtTime(0.0001, now);
+      volume.gain.exponentialRampToValueAtTime(gain, now + 0.02);
+      volume.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+      oscillator.connect(volume).connect(context.destination);
+      oscillator.start(now);
+      oscillator.stop(now + duration + 0.02);
+    }
+
+    function playSfx(name) {
+      switch (name) {
+        case 'jump':
+          playTone({ frequency: 320, duration: 0.11, type: 'square', gain: 0.04, slideTo: 500 });
+          break;
+        case 'hit':
+          playTone({ frequency: 180, duration: 0.22, type: 'sawtooth', gain: 0.07, slideTo: 70 });
+          break;
+        case 'start':
+          playTone({ frequency: 420, duration: 0.15, type: 'triangle', gain: 0.05, slideTo: 560 });
+          setTimeout(() => playTone({ frequency: 560, duration: 0.15, type: 'triangle', gain: 0.05, slideTo: 700 }), 80);
+          break;
+        case 'gameover':
+          playTone({ frequency: 220, duration: 0.2, type: 'sawtooth', gain: 0.06, slideTo: 120 });
+          setTimeout(() => playTone({ frequency: 160, duration: 0.28, type: 'triangle', gain: 0.06, slideTo: 75 }), 100);
+          break;
+        case 'bonus':
+          playTone({ frequency: 660, duration: 0.14, type: 'triangle', gain: 0.05, slideTo: 820 });
+          setTimeout(() => playTone({ frequency: 820, duration: 0.12, type: 'triangle', gain: 0.05, slideTo: 980 }), 60);
+          break;
+        default:
+          break;
+      }
+    }
+
+    function startMusic() {
+      const context = ensureAudio();
+      if (!context || musicTimer || state.phase !== 'playing') return;
+      const melody = [261.63, 329.63, 392, 329.63, 293.66, 349.23, 392, 440];
+      musicTimer = setInterval(() => {
+        if (state.phase !== 'playing') {
+          stopMusic();
+          return;
+        }
+        const note = melody[state.musicStep % melody.length];
+        playTone({ frequency: note, duration: 0.16, type: 'triangle', gain: 0.018, slideTo: note * 1.03 });
+        state.musicStep += 1;
+      }, 250);
+    }
+
+    function stopMusic() {
+      if (musicTimer) {
+        clearInterval(musicTimer);
+        musicTimer = null;
+      }
+    }
 
     function loadKeyMap() {
       try {
@@ -331,14 +505,29 @@
       canvas.height = Math.floor(height * dpr);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       state.groundY = height - 52;
-      if (!gameStarted) {
+      if (!state.phase || state.phase === 'menu') {
         player.x = 120;
       }
       player.y = state.groundY - player.h;
       player.grounded = true;
     }
 
-    function resetGame() {
+    function showOverlay(title, text, primaryText, secondaryText, showSecondary) {
+      menuTitle.textContent = title;
+      menuText.textContent = text;
+      primaryBtn.textContent = primaryText;
+      secondaryBtn.textContent = secondaryText || '再來一次';
+      secondaryBtn.style.display = showSecondary ? 'inline-flex' : 'none';
+      overlay.classList.remove('hidden');
+      state.overlayVisible = true;
+    }
+
+    function hideOverlay() {
+      overlay.classList.add('hidden');
+      state.overlayVisible = false;
+    }
+
+    function resetGamePlayState() {
       obstacles.length = 0;
       particles.length = 0;
       state.time = 0;
@@ -346,14 +535,52 @@
       state.spawnTimer = 700;
       state.hitFlash = 0;
       state.worldSpeed = 320;
+      state.musicStep = 0;
       player.x = 120;
       player.y = state.groundY - player.h;
       player.vy = 0;
       player.grounded = true;
-      gameOver = false;
-      gameStarted = true;
-      toast.textContent = '觸碰螢幕可跳躍，電腦請用自訂鍵盤操控';
+      input.left = false;
+      input.right = false;
+      input.jump = false;
       updateHUD();
+    }
+
+    function startGame() {
+      ensureAudio();
+      stopMusic();
+      resetGamePlayState();
+      state.phase = 'playing';
+      hideOverlay();
+      toast.textContent = '觸碰螢幕可跳躍，電腦請用自訂鍵盤操控';
+      playSfx('start');
+      startMusic();
+      lastTime = performance.now();
+    }
+
+    function pauseGame() {
+      if (state.phase !== 'playing') return;
+      state.phase = 'paused';
+      stopMusic();
+      showOverlay('暫停', '按繼續或 P 鍵繼續遊戲。', '繼續遊戲', '重新開始', true);
+      toast.textContent = '遊戲已暫停';
+    }
+
+    function resumeGame() {
+      if (state.phase !== 'paused') return;
+      state.phase = 'playing';
+      hideOverlay();
+      toast.textContent = '繼續遊戲';
+      startMusic();
+    }
+
+    function endGame() {
+      state.phase = 'gameover';
+      stopMusic();
+      saveBestScore();
+      showOverlay('遊戲結束', `最終分數：${state.score}，再挑戰一次！`, '再來一次', '重置', true);
+      toast.textContent = `遊戲結束！分數：${state.score}`;
+      playSfx('gameover');
     }
 
     function updateHUD() {
@@ -393,8 +620,7 @@
     }
 
     function pickSpawnType() {
-      const roll = Math.random();
-      return roll < 0.7 ? 'block' : 'float';
+      return Math.random() < 0.7 ? 'block' : 'float';
     }
 
     function spawnObstacle() {
@@ -426,14 +652,17 @@
     }
 
     function triggerJump() {
-      if (!gameStarted || gameOver) {
-        resetGame();
+      if (state.phase !== 'playing') {
+        if (state.phase === 'menu' || state.phase === 'gameover') {
+          startGame();
+        }
         return;
       }
       if (player.grounded) {
         player.vy = -player.jumpForce;
         player.grounded = false;
         spawnParticle(player.x + player.w / 2, player.y + player.h, '#ffe08a', 8);
+        playSfx('jump');
       }
     }
 
@@ -454,13 +683,13 @@
     }
 
     function update(dt) {
-      if (!gameStarted) return;
-      if (gameOver) return;
+      if (state.phase !== 'playing') return;
 
       state.time += dt;
-      state.score = Math.floor(state.time / 120) + Math.floor(state.time / 1800);
-      state.worldSpeed = 320 + state.score * 2.6 + state.time * 0.012;
-      const intervalBase = Math.max(420, 1300 - state.time * 0.045 - state.score * 0.8);
+      state.score = Math.floor(state.time / 120);
+      const scoreLevel = Math.floor(state.score / 100);
+      state.worldSpeed = 320 + scoreLevel * 80 + state.time * 0.012;
+      const intervalBase = Math.max(420, 1300 - state.time * 0.06 - scoreLevel * 140);
       state.spawnTimer -= dt;
 
       if (state.spawnTimer <= 0) {
@@ -496,10 +725,9 @@
         const obstacleBox = { x: obstacle.x, y: obstacle.y, w: obstacle.w, h: obstacle.h };
 
         if (rectOverlap(playerBox, obstacleBox)) {
-          gameOver = true;
-          toast.textContent = `遊戲結束！分數：${state.score}，按 R 或點擊螢幕重新開始`;
-          spawnParticle(player.x + player.w / 2, player.y + player.h / 2, '#ff5959', 24);
+          playSfx('hit');
           state.hitFlash = 0.8;
+          endGame();
           break;
         }
       }
@@ -626,30 +854,13 @@
       requestAnimationFrame(gameLoop);
     }
 
-    function handleKeyChange(code, isPressed) {
-      const found = Object.entries(keyMap).find(([, mapped]) => mapped === code);
-      if (found) {
-        const [action] = found;
-        handleInput(action, isPressed);
-      }
-      if (waitingForKey && isPressed) {
-        keyMap[waitingForKey] = code;
-        saveKeyMap();
-        updateKeyButtons();
-        waitingForKey = null;
-        toast.textContent = `已更新 ${waitingForKey ? '' : '按鍵設定'} `;
-        return;
-      }
-    }
-
     document.addEventListener('keydown', (event) => {
       const code = event.code;
-      if (Object.values(keyMap).includes(code)) {
+      if (Object.values(keyMap).includes(code) || code === 'Space' || code === 'KeyP' || code === 'Escape') {
         event.preventDefault();
       }
 
       if (waitingForKey) {
-        event.preventDefault();
         if (code === 'Escape') {
           waitingForKey = null;
           toast.textContent = '取消鍵盤設定';
@@ -669,12 +880,28 @@
       if (code === keyMap.right) handleInput('right', true);
       if (code === keyMap.jump) {
         handleInput('jump', true);
-        if (player.grounded && !gameOver && gameStarted) {
+        if (state.phase === 'playing' && player.grounded) {
           triggerJump();
         }
       }
+      if (code === 'Space') {
+        if (state.phase === 'playing') {
+          triggerJump();
+        } else if (state.phase === 'paused') {
+          resumeGame();
+        } else {
+          startGame();
+        }
+      }
+      if (code === 'KeyP' || code === 'Escape') {
+        if (state.phase === 'playing') {
+          pauseGame();
+        } else if (state.phase === 'paused') {
+          resumeGame();
+        }
+      }
       if (code === 'KeyR') {
-        resetGame();
+        startGame();
       }
     });
 
@@ -683,21 +910,47 @@
       if (code === keyMap.left) handleInput('left', false);
       if (code === keyMap.right) handleInput('right', false);
       if (code === keyMap.jump) handleInput('jump', false);
+      if (code === 'Space') handleInput('jump', false);
     });
 
     canvas.addEventListener('pointerdown', (event) => {
       event.preventDefault();
-      if (window.innerWidth > window.innerHeight) {
-        if (!gameStarted || gameOver) {
-          resetGame();
-          return;
-        }
+      ensureAudio();
+      if (state.phase === 'playing') {
         triggerJump();
+        return;
       }
+      if (state.phase === 'paused') {
+        resumeGame();
+        return;
+      }
+      startGame();
     });
 
     configButton.addEventListener('click', () => {
       keyPanel.classList.toggle('open');
+    });
+
+    pauseBtn.addEventListener('click', () => {
+      if (state.phase === 'playing') {
+        pauseGame();
+      } else if (state.phase === 'paused') {
+        resumeGame();
+      } else {
+        startGame();
+      }
+    });
+
+    primaryBtn.addEventListener('click', () => {
+      if (state.phase === 'paused') {
+        resumeGame();
+      } else {
+        startGame();
+      }
+    });
+
+    secondaryBtn.addEventListener('click', () => {
+      startGame();
     });
 
     document.querySelectorAll('[data-action]').forEach((button) => {
@@ -718,7 +971,8 @@
       setCanvasSize();
       updateKeyButtons();
       updateHUD();
-      resetGame();
+      showOverlay('開始遊戲', '避開障礙物，衝到更高分！', '開始遊戲', '再來一次', false);
+      state.phase = 'menu';
       requestAnimationFrame(gameLoop);
     }
 
