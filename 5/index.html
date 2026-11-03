@@ -296,6 +296,14 @@
       }
     }
 
+    function tryEnterFullscreen() {
+      const root = document.documentElement;
+      const fs = root.requestFullscreen || root.webkitRequestFullscreen || root.mozRequestFullScreen || root.msRequestFullscreen;
+      if (fs && !document.fullscreenElement && !document.webkitFullscreenElement) {
+        fs.call(root).catch(() => {});
+      }
+    }
+
     function isPortraitMode() {
       return window.innerHeight > window.innerWidth;
     }
@@ -505,6 +513,7 @@
       startMusic();
       lastTime = performance.now();
       tryLockLandscape();
+      tryEnterFullscreen();
     }
 
     function pauseGame() {
@@ -525,6 +534,8 @@
       hideOverlay();
       toast.textContent = '繼續遊戲';
       startMusic();
+      tryLockLandscape();
+      tryEnterFullscreen();
     }
 
     function endGame() {
@@ -889,6 +900,7 @@
         startGame();
       }
       tryLockLandscape();
+      tryEnterFullscreen();
     });
 
     document.addEventListener('keyup', (event) => {
@@ -903,6 +915,7 @@
       event.preventDefault();
       ensureAudio();
       tryLockLandscape();
+      tryEnterFullscreen();
       if (state.phase === 'playing') {
         triggerJump();
         return;
