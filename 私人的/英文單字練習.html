@@ -1,0 +1,1228 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>英文單字練習站</title>
+  <style>
+    :root {
+      --bg: #f4efe9;
+      --bg-2: #efe5d8;
+      --panel: rgba(255,255,255,0.72);
+      --panel-strong: rgba(255,255,255,0.9);
+      --ink: #1f2430;
+      --muted: #657086;
+      --line: rgba(76, 90, 108, 0.18);
+      --accent: #6e7ad8;
+      --accent-2: #8b6ed6;
+      --accent-3: #d8c0ff;
+      --success: #2d9b79;
+      --warn: #d68d4c;
+      --danger: #c75f59;
+      --shadow: 0 18px 44px rgba(72, 82, 116, 0.12);
+      --radius: 22px;
+    }
+
+    * { box-sizing: border-box; }
+
+    html, body {
+      margin: 0;
+      min-height: 100%;
+      font-family: "Segoe UI", "Microsoft JhengHei", sans-serif;
+      background: linear-gradient(135deg, var(--bg), var(--bg-2));
+      color: var(--ink);
+    }
+
+    body {
+      display: flex;
+      justify-content: center;
+      padding: 24px 16px 40px;
+    }
+
+    .app {
+      width: min(1200px, 100%);
+      background: rgba(255,255,255,0.38);
+      border: 1px solid rgba(255,255,255,0.5);
+      border-radius: 28px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(10px);
+      overflow: hidden;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 18px 22px;
+      background: linear-gradient(135deg, rgba(110,122,216,0.12), rgba(139,110,214,0.08));
+      border-bottom: 1px solid var(--line);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .brand-mark {
+      width: 44px;
+      height: 44px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      display: grid;
+      place-items: center;
+      color: white;
+      font-weight: 900;
+      font-size: 1.1rem;
+      box-shadow: 0 10px 20px rgba(110,122,216,0.25);
+    }
+
+    .brand h1 {
+      margin: 0;
+      font-size: clamp(1.2rem, 2vw, 2rem);
+      letter-spacing: 0.08em;
+      white-space: nowrap;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    .btn {
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.72);
+      color: var(--ink);
+      border-radius: 999px;
+      padding: 10px 16px;
+      font-size: 0.92rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease;
+      box-shadow: 0 6px 16px rgba(35,42,57,0.04);
+    }
+
+    .btn:hover {
+      transform: translateY(-1px);
+      border-color: rgba(110,122,216,0.5);
+    }
+
+    .btn.primary {
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      color: white;
+      border-color: transparent;
+    }
+
+    .btn.danger {
+      background: rgba(199,95,89,0.08);
+      color: var(--danger);
+      border-color: rgba(199,95,89,0.28);
+    }
+
+    .layout {
+      display: grid;
+      grid-template-columns: 340px minmax(0, 1fr);
+      min-height: 720px;
+    }
+
+    .sidebar {
+      padding: 18px 18px 14px;
+      background: rgba(255,255,255,0.26);
+      border-right: 1px solid var(--line);
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 18px 16px;
+      box-shadow: 0 12px 20px rgba(23,31,42,0.04);
+    }
+
+    .panel + .panel {
+      margin-top: 18px;
+    }
+
+    .panel h3 {
+      margin: 0 0 14px;
+      font-size: 0.98rem;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+
+    .folder-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: 270px;
+      overflow: auto;
+      padding-right: 4px;
+    }
+
+    .folder-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 10px 12px;
+      border-radius: 14px;
+      border: 1px solid transparent;
+      background: rgba(110,122,216,0.04);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .folder-item.active {
+      background: linear-gradient(135deg, rgba(110,122,216,0.15), rgba(139,110,214,0.08));
+      border-color: rgba(110,122,216,0.28);
+    }
+
+    .folder-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .folder-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--accent-2));
+      flex-shrink: 0;
+    }
+
+    .folder-name {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      font-weight: 700;
+    }
+
+    .folder-count {
+      font-size: 0.75rem;
+      color: var(--muted);
+      background: rgba(101,112,134,0.08);
+      padding: 3px 8px;
+      border-radius: 999px;
+    }
+
+    .folder-actions {
+      display: flex;
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .input-row {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .input, select, textarea {
+      width: 100%;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.55);
+      border-radius: 14px;
+      padding: 11px 12px;
+      font: inherit;
+      color: var(--ink);
+      outline: none;
+      transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    }
+
+    textarea {
+      min-height: 90px;
+      resize: vertical;
+    }
+
+    .input:focus, select:focus, textarea:focus {
+      border-color: rgba(110,122,216,0.5);
+      box-shadow: 0 0 0 4px rgba(110,122,216,0.08);
+    }
+
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .section-header h2 {
+      margin: 0;
+      font-size: 1.02rem;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+
+    .content {
+      padding: 22px;
+    }
+
+    .content-grid {
+      display: grid;
+      gap: 18px;
+    }
+
+    .cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 18px;
+    }
+
+    .card {
+      background: var(--panel-strong);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 18px 16px;
+      box-shadow: 0 12px 22px rgba(34,42,55,0.04);
+    }
+
+    .card h3 {
+      margin: 0 0 14px;
+      font-size: 1.05rem;
+      letter-spacing: 0.04em;
+    }
+
+    .stats-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .stat-pill {
+      background: rgba(110,122,216,0.08);
+      color: var(--ink);
+      border: 1px solid rgba(110,122,216,0.1);
+      border-radius: 999px;
+      padding: 8px 12px;
+      font-weight: 700;
+    }
+
+    .mode-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+      margin-top: 8px;
+    }
+
+    .mode-option {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: rgba(255,255,255,0.62);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 14px 12px;
+      cursor: pointer;
+      transition: border-color 0.15s ease, transform 0.15s ease;
+    }
+
+    .mode-option input {
+      position: absolute;
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .mode-option .mode-badge {
+      width: 34px;
+      height: 34px;
+      border-radius: 12px;
+      display: grid;
+      place-items: center;
+      font-weight: 900;
+      background: linear-gradient(135deg, rgba(110,122,216,0.16), rgba(139,110,214,0.18));
+      color: var(--accent);
+    }
+
+    .mode-option.selected {
+      border-color: rgba(110,122,216,0.5);
+      background: linear-gradient(135deg, rgba(110,122,216,0.07), rgba(139,110,214,0.06));
+      transform: translateY(-1px);
+    }
+
+    .practice-controls {
+      display: grid;
+      grid-template-columns: 1fr 1fr 140px;
+      gap: 12px;
+      margin-top: 14px;
+    }
+
+    .folder-checks {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 10px;
+    }
+
+    .check-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255,255,255,0.7);
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 8px 10px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .check-pill input {
+      accent-color: var(--accent);
+    }
+
+    .word-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 12px;
+      overflow: hidden;
+      border-radius: 16px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.5);
+    }
+
+    .word-table th, .word-table td {
+      padding: 10px 12px;
+      text-align: left;
+      border-bottom: 1px solid var(--line);
+      vertical-align: top;
+    }
+
+    .word-table th {
+      background: rgba(110,122,216,0.05);
+      font-size: 0.78rem;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      text-transform: uppercase;
+    }
+
+    .word-table tbody tr:last-child td {
+      border-bottom: none;
+    }
+
+    .word-actions {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .mini-btn {
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.7);
+      border-radius: 999px;
+      padding: 5px 10px;
+      font-size: 0.76rem;
+      cursor: pointer;
+      color: var(--ink);
+    }
+
+    .mini-btn.danger {
+      border-color: rgba(199,95,89,0.2);
+      color: var(--danger);
+      background: rgba(199,95,89,0.04);
+    }
+
+    .practice-box {
+      display: none;
+      background: linear-gradient(135deg, rgba(110,122,216,0.08), rgba(139,110,214,0.08));
+      border: 1px solid rgba(110,122,216,0.18);
+      border-radius: 24px;
+      padding: 20px;
+      margin-top: 18px;
+    }
+
+    .practice-box.active {
+      display: block;
+    }
+
+    .quiz-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 18px;
+      flex-wrap: wrap;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(45,155,121,0.1);
+      border: 1px solid rgba(45,155,121,0.18);
+      color: var(--success);
+      font-weight: 700;
+      font-size: 0.78rem;
+    }
+
+    .quiz-card {
+      min-height: 210px;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      background: rgba(255,255,255,0.7);
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      padding: 18px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.7);
+    }
+
+    .quiz-word {
+      font-size: clamp(2.1rem, 5vw, 4rem);
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      margin: 0;
+      color: var(--ink);
+    }
+
+    .quiz-hint {
+      margin: 0 0 14px;
+      font-size: 1rem;
+      color: var(--muted);
+      letter-spacing: 0.08em;
+    }
+
+    .answer-wrap {
+      display: grid;
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .answer-input {
+      font-size: 1.05rem;
+      padding: 14px 16px;
+      border-radius: 16px;
+      border: 1px solid var(--line);
+      background: rgba(255,255,255,0.8);
+    }
+
+    .quiz-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+
+    .result {
+      min-height: 30px;
+      font-weight: 700;
+      margin-top: 8px;
+      color: var(--muted);
+    }
+
+    .result.success { color: var(--success); }
+    .result.error { color: var(--danger); }
+
+    .empty {
+      color: var(--muted);
+      text-align: center;
+      padding: 20px 12px;
+      border: 1px dashed var(--line);
+      border-radius: 18px;
+      background: rgba(255,255,255,0.4);
+    }
+
+    @media (max-width: 900px) {
+      .layout {
+        grid-template-columns: 1fr;
+      }
+
+      .sidebar {
+        border-right: none;
+        border-bottom: 1px solid var(--line);
+      }
+
+      .practice-controls {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 560px) {
+      body {
+        padding: 12px 12px 32px;
+      }
+
+      .topbar {
+        padding: 14px 16px;
+      }
+
+      .brand {
+        width: 100%;
+      }
+
+      .brand h1 {
+        font-size: 1.05rem;
+        letter-spacing: 0.04em;
+      }
+
+      .header-actions {
+        width: 100%;
+        justify-content: flex-start;
+      }
+
+      .content {
+        padding: 14px;
+      }
+
+      .cards-grid,
+      .mode-list {
+        grid-template-columns: 1fr;
+      }
+
+      .word-table {
+        font-size: 0.84rem;
+      }
+
+      .word-table th, .word-table td {
+        padding: 8px 8px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark">V</div>
+        <h1>英文單字練習站</h1>
+      </div>
+      <div class="header-actions">
+        <button class="btn" id="importBtn" type="button">匯入</button>
+        <input id="importFile" type="file" accept="application/json" hidden />
+        <button class="btn primary" id="exportBtn" type="button">匯出</button>
+      </div>
+    </header>
+
+    <main class="layout">
+      <aside class="sidebar">
+        <section class="panel">
+          <h3>資料夾</h3>
+          <div class="folder-list" id="folderList"></div>
+
+          <div class="folder-actions">
+            <input id="newFolderInput" class="input" placeholder="新增資料夾名稱" />
+            <button class="btn primary" id="addFolderBtn" type="button">新增</button>
+          </div>
+        </section>
+
+        <section class="panel">
+          <h3>新增單字</h3>
+          <div class="input-row">
+            <input id="wordInput" class="input" placeholder="單字（例如：apology）" />
+          </div>
+          <div class="input-row">
+            <textarea id="meaningInput" placeholder="中文意思（可直接貼上搜尋結果）"></textarea>
+          </div>
+          <div class="input-row">
+            <select id="folderSelect"></select>
+          </div>
+          <div class="input-row" style="margin-top: 12px;">
+            <button class="btn primary" id="saveWordBtn" type="button" style="width: 100%;">儲存單字</button>
+          </div>
+        </section>
+      </aside>
+
+      <section class="content">
+        <div class="content-grid">
+          <section class="card">
+            <div class="section-header">
+              <h2>總覽</h2>
+            </div>
+            <div class="stats-row">
+              <div class="stat-pill">總字數：<span id="totalWordsStat">0</span></div>
+              <div class="stat-pill">資料夾：<span id="totalFoldersStat">0</span></div>
+            </div>
+          </section>
+
+          <section class="card">
+            <div class="section-header">
+              <h2>練習設定</h2>
+            </div>
+
+            <div class="mode-list" id="modeList">
+              <label class="mode-option selected">
+                <input type="radio" name="mode" value="flashcard" checked />
+                <span class="mode-badge">1</span>
+                <span>
+                  <strong>單字卡</strong><br />
+                  <small>看字母理解意思</small>
+                </span>
+              </label>
+
+              <label class="mode-option">
+                <input type="radio" name="mode" value="spell" />
+                <span class="mode-badge">2</span>
+                <span>
+                  <strong>拼出單字</strong><br />
+                  <small>中文意思 → 英文拼字</small>
+                </span>
+              </label>
+
+              <label class="mode-option">
+                <input type="radio" name="mode" value="translate" />
+                <span class="mode-badge">3</span>
+                <span>
+                  <strong>中文翻譯</strong><br />
+                  <small>英文 → 寫中文意思</small>
+                </span>
+              </label>
+            </div>
+
+            <div class="practice-controls">
+              <div>
+                <label style="display:block;margin-bottom:8px;font-weight:700;color:var(--muted);">範圍</label>
+                <div class="folder-checks" id="folderChecks"></div>
+              </div>
+              <div>
+                <label for="countInput" style="display:block;margin-bottom:8px;font-weight:700;color:var(--muted);">每次練習字數</label>
+                <input id="countInput" class="input" type="number" min="1" max="100" value="10" />
+              </div>
+              <div>
+                <label style="display:block;margin-bottom:8px;font-weight:700;color:var(--muted);">&nbsp;</label>
+                <button class="btn primary" id="startPracticeBtn" type="button" style="width:100%;">開始練習</button>
+              </div>
+            </div>
+          </section>
+
+          <section class="card">
+            <div class="section-header">
+              <h2>單字列表</h2>
+            </div>
+
+            <div id="wordTableWrap"></div>
+          </section>
+        </div>
+
+        <section class="practice-box" id="practiceBox">
+          <div class="quiz-top">
+            <div class="badge" id="practiceModeLabel">單字卡</div>
+            <div style="font-weight:700;color:var(--muted);">題目 <span id="progressText">1 / 1</span></div>
+          </div>
+
+          <div class="quiz-card">
+            <div>
+              <p class="quiz-hint" id="quizHint">看中文意思，拼出英文單字</p>
+              <h3 class="quiz-word" id="quizPrompt">word</h3>
+            </div>
+          </div>
+
+          <div class="answer-wrap">
+            <input id="answerInput" class="answer-input" type="text" placeholder="請輸入答案" />
+            <div class="result" id="resultText"></div>
+          </div>
+
+          <div class="quiz-actions">
+            <button class="btn" id="showAnswerBtn" type="button">看答案</button>
+            <button class="btn primary" id="submitAnswerBtn" type="button">確認</button>
+            <button class="btn" id="nextBtn" type="button">下一題</button>
+          </div>
+        </section>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    const STORAGE_KEY = 'vocab-english-practice-v1';
+
+    const defaultState = {
+      folders: [{ id: 'default', name: '未分類' }],
+      words: [
+        { id: uid(), word: 'apple', meaning: '蘋果', folderId: 'default' },
+        { id: uid(), word: 'book', meaning: '書', folderId: 'default' },
+        { id: uid(), word: 'happy', meaning: '快樂的', folderId: 'default' }
+      ],
+      selectedFolderId: 'default'
+    };
+
+    let state = loadState();
+    let editingWordId = null;
+    let currentPractice = null;
+    let currentQuestionIndex = 0;
+
+    function uid() {
+      return Math.random().toString(36).slice(2, 10) + Date.now().toString(36);
+    }
+
+    function loadState() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (!raw) return structuredClone(defaultState);
+        const parsed = JSON.parse(raw);
+        if (!parsed || !Array.isArray(parsed.folders) || !Array.isArray(parsed.words)) {
+          return structuredClone(defaultState);
+        }
+        return parsed;
+      } catch (error) {
+        return structuredClone(defaultState);
+      }
+    }
+
+    function saveState() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/\"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function getFolderById(id) {
+      return state.folders.find(folder => folder.id === id) || state.folders[0];
+    }
+
+    function getFolderWords(folderId) {
+      if (!folderId || folderId === 'all') return [...state.words];
+      return state.words.filter(word => word.folderId === folderId);
+    }
+
+    function renderFolderSelect() {
+      const select = document.getElementById('folderSelect');
+      select.innerHTML = '';
+      state.folders.forEach(folder => {
+        const option = document.createElement('option');
+        option.value = folder.id;
+        option.textContent = folder.name;
+        if (folder.id === state.selectedFolderId) option.selected = true;
+        select.appendChild(option);
+      });
+    }
+
+    function renderFolders() {
+      const folderList = document.getElementById('folderList');
+      folderList.innerHTML = '';
+
+      state.folders.forEach(folder => {
+        const item = document.createElement('div');
+        item.className = 'folder-item' + (folder.id === state.selectedFolderId ? ' active' : '');
+        item.innerHTML = `
+          <div class="folder-meta">
+            <span class="folder-dot"></span>
+            <span class="folder-name">${escapeHtml(folder.name)}</span>
+          </div>
+          <span class="folder-count">${getFolderWords(folder.id).length}</span>
+        `;
+
+        item.addEventListener('click', () => {
+          state.selectedFolderId = folder.id;
+          renderAll();
+        });
+
+        folderList.appendChild(item);
+      });
+    }
+
+    function renderFolderChecks() {
+      const box = document.getElementById('folderChecks');
+      box.innerHTML = '';
+      state.folders.forEach(folder => {
+        const label = document.createElement('label');
+        label.className = 'check-pill';
+        label.innerHTML = `
+          <input type="checkbox" value="${folder.id}" checked />
+          <span>${escapeHtml(folder.name)}</span>
+        `;
+        box.appendChild(label);
+      });
+    }
+
+    function renderWordTable() {
+      const wrap = document.getElementById('wordTableWrap');
+      const items = state.selectedFolderId === 'all'
+        ? state.words
+        : state.words.filter(word => word.folderId === state.selectedFolderId);
+
+      if (!items.length) {
+        wrap.innerHTML = '<div class="empty">此資料夾還沒有單字，請先新增單字。</div>';
+        return;
+      }
+
+      const table = document.createElement('table');
+      table.className = 'word-table';
+      table.innerHTML = `
+        <thead>
+          <tr>
+            <th>單字</th>
+            <th>中文</th>
+            <th>資料夾</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      `;
+
+      const tbody = table.querySelector('tbody');
+      items.forEach(word => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${escapeHtml(word.word)}</td>
+          <td>${escapeHtml(word.meaning)}</td>
+          <td>${escapeHtml(getFolderById(word.folderId).name)}</td>
+          <td>
+            <div class="word-actions">
+              <button class="mini-btn" type="button" data-edit="${word.id}">編輯</button>
+              <button class="mini-btn danger" type="button" data-del="${word.id}">刪除</button>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      wrap.innerHTML = '';
+      wrap.appendChild(table);
+
+      table.querySelectorAll('[data-edit]').forEach(button => {
+        button.addEventListener('click', () => {
+          const id = button.getAttribute('data-edit');
+          const word = state.words.find(item => item.id === id);
+          if (!word) return;
+          editingWordId = id;
+          document.getElementById('wordInput').value = word.word;
+          document.getElementById('meaningInput').value = word.meaning;
+          document.getElementById('folderSelect').value = word.folderId;
+          document.getElementById('saveWordBtn').textContent = '更新單字';
+        });
+      });
+
+      table.querySelectorAll('[data-del]').forEach(button => {
+        button.addEventListener('click', () => {
+          const id = button.getAttribute('data-del');
+          if (!confirm('確定刪除此單字？')) return;
+          state.words = state.words.filter(item => item.id !== id);
+          saveState();
+          renderAll();
+        });
+      });
+    }
+
+    function renderStats() {
+      document.getElementById('totalWordsStat').textContent = String(state.words.length);
+      document.getElementById('totalFoldersStat').textContent = String(state.folders.length);
+    }
+
+    function renderAll() {
+      renderFolders();
+      renderFolderSelect();
+      renderFolderChecks();
+      renderWordTable();
+      renderStats();
+      updateModeSelection();
+    }
+
+    function addFolder() {
+      const input = document.getElementById('newFolderInput');
+      const name = input.value.trim();
+      if (!name) {
+        alert('請輸入資料夾名稱');
+        return;
+      }
+
+      const exists = state.folders.some(folder => folder.name === name);
+      if (exists) {
+        alert('已存在相同名稱的資料夾');
+        return;
+      }
+
+      const folder = { id: uid(), name };
+      state.folders.push(folder);
+      state.selectedFolderId = folder.id;
+      saveState();
+      input.value = '';
+      renderAll();
+    }
+
+    function resetWordForm() {
+      editingWordId = null;
+      document.getElementById('wordInput').value = '';
+      document.getElementById('meaningInput').value = '';
+      document.getElementById('saveWordBtn').textContent = '儲存單字';
+      if (state.folders.length) {
+        document.getElementById('folderSelect').value = state.selectedFolderId;
+      }
+    }
+
+    function saveWord() {
+      const word = document.getElementById('wordInput').value.trim();
+      const meaning = document.getElementById('meaningInput').value.trim();
+      const folderId = document.getElementById('folderSelect').value;
+
+      if (!word || !meaning || !folderId) {
+        alert('請輸入單字、中文意思與資料夾');
+        return;
+      }
+
+      if (editingWordId) {
+        const item = state.words.find(entry => entry.id === editingWordId);
+        if (item) {
+          item.word = word;
+          item.meaning = meaning;
+          item.folderId = folderId;
+        }
+      } else {
+        state.words.push({ id: uid(), word, meaning, folderId });
+      }
+
+      saveState();
+      resetWordForm();
+      renderAll();
+    }
+
+    function getSelectedPracticeFolders() {
+      const selected = Array.from(document.querySelectorAll('#folderChecks input:checked')).map(el => el.value);
+      if (!selected.length) return [];
+      return selected;
+    }
+
+    function getPracticePool() {
+      const selectedFolders = getSelectedPracticeFolders();
+      const pool = selectedFolders.length
+        ? state.words.filter(word => selectedFolders.includes(word.folderId))
+        : state.words;
+      return pool.filter(word => word && word.word && word.meaning);
+    }
+
+    function updateModeSelection() {
+      const selected = document.querySelector('input[name="mode"]:checked');
+      document.querySelectorAll('.mode-option').forEach(option => {
+        option.classList.toggle('selected', option.querySelector('input').checked);
+      });
+      if (!selected) return;
+      const labelMap = {
+        flashcard: '單字卡',
+        spell: '拼出單字',
+        translate: '中文翻譯'
+      };
+      document.getElementById('practiceModeLabel').textContent = labelMap[selected.value] || '練習';
+    }
+
+    document.querySelectorAll('input[name="mode"]').forEach(radio => {
+      radio.addEventListener('change', updateModeSelection);
+    });
+
+    function normalizeAnswer(value) {
+      return String(value).trim().toLowerCase();
+    }
+
+    function isCorrectAnswer(question, answer) {
+      const target = normalizeAnswer(question.word);
+      const user = normalizeAnswer(answer);
+      if (question.mode === 'flashcard') {
+        return normalizeAnswer(question.meaning) === normalizeAnswer(answer);
+      }
+      return user === target;
+    }
+
+    function buildQuestionSet() {
+      const pool = getPracticePool();
+      const limit = Math.min(parseInt(document.getElementById('countInput').value, 10) || 10, pool.length || 1);
+      if (!pool.length) return [];
+
+      const shuffled = [...pool].sort(() => Math.random() - 0.5).slice(0, limit);
+      return shuffled.map(item => {
+        const mode = document.querySelector('input[name="mode"]:checked').value;
+        if (mode === 'flashcard') {
+          return {
+            id: item.id,
+            mode,
+            word: item.word,
+            meaning: item.meaning,
+            prompt: item.word,
+            hint: '看字卡，試著想出中文意思',
+            answerText: item.meaning
+          };
+        }
+        if (mode === 'spell') {
+          return {
+            id: item.id,
+            mode,
+            word: item.word,
+            meaning: item.meaning,
+            prompt: item.meaning,
+            hint: '請拼出英文單字',
+            answerText: item.word
+          };
+        }
+        return {
+          id: item.id,
+          mode,
+          word: item.word,
+          meaning: item.meaning,
+          prompt: item.word,
+          hint: '請寫出中文意思',
+          answerText: item.meaning
+        };
+      });
+    }
+
+    function setQuizContent(question) {
+      const prompt = document.getElementById('quizPrompt');
+      const hint = document.getElementById('quizHint');
+      const result = document.getElementById('resultText');
+      const input = document.getElementById('answerInput');
+      const mode = document.querySelector('input[name="mode"]:checked').value;
+
+      input.value = '';
+      result.className = 'result';
+      result.textContent = '';
+
+      if (mode === 'flashcard') {
+        prompt.textContent = question.word;
+        hint.textContent = '看看這個單字，想一想它的中文意思';
+      } else if (mode === 'spell') {
+        prompt.textContent = question.meaning;
+        hint.textContent = '請拼出英文單字';
+      } else {
+        prompt.textContent = question.word;
+        hint.textContent = '請寫出中文意思';
+      }
+
+      document.getElementById('progressText').textContent = `${currentQuestionIndex + 1} / ${currentPractice.length}`;
+    }
+
+    function checkCurrentAnswer() {
+      if (!currentPractice || !currentPractice.length) return;
+      const q = currentPractice[currentQuestionIndex];
+      if (!q) return;
+      const input = document.getElementById('answerInput');
+      const answer = input.value;
+      const result = document.getElementById('resultText');
+      const correct =
+        q.mode === 'flashcard'
+          ? normalizeAnswer(answer) === normalizeAnswer(q.meaning)
+          : normalizeAnswer(answer) === normalizeAnswer(q.answerText);
+
+      if (correct) {
+        result.className = 'result success';
+        result.textContent = '正確！';
+      } else {
+        result.className = 'result error';
+        result.textContent = `答案：${q.answerText}`;
+      }
+      return correct;
+    }
+
+    function nextQuestion() {
+      if (!currentPractice || !currentPractice.length) return;
+      currentQuestionIndex += 1;
+      if (currentQuestionIndex >= currentPractice.length) {
+        document.getElementById('resultText').textContent = '練習完成！';
+        document.getElementById('resultText').className = 'result success';
+        document.getElementById('practiceBox').classList.remove('active');
+        currentPractice = null;
+        return;
+      }
+      setQuizContent(currentPractice[currentQuestionIndex]);
+    }
+
+    function startPractice() {
+      const pool = getPracticePool();
+      if (!pool.length) {
+        alert('請先新增至少一個單字，或選擇至少一個資料夾');
+        return;
+      }
+
+      const questions = buildQuestionSet();
+      if (!questions.length) {
+        alert('這個範圍中沒有可練習的單字');
+        return;
+      }
+
+      currentPractice = questions;
+      currentQuestionIndex = 0;
+      document.getElementById('practiceBox').classList.add('active');
+      setQuizContent(currentPractice[currentQuestionIndex]);
+    }
+
+    function revealAnswer() {
+      if (!currentPractice || !currentPractice.length) return;
+      const q = currentPractice[currentQuestionIndex];
+      const input = document.getElementById('answerInput');
+      const result = document.getElementById('resultText');
+      input.value = q.answerText;
+      result.className = 'result';
+      result.textContent = `正確答案：${q.answerText}`;
+    }
+
+    document.getElementById('addFolderBtn').addEventListener('click', addFolder);
+    document.getElementById('saveWordBtn').addEventListener('click', saveWord);
+    document.getElementById('startPracticeBtn').addEventListener('click', startPractice);
+    document.getElementById('submitAnswerBtn').addEventListener('click', checkCurrentAnswer);
+    document.getElementById('nextBtn').addEventListener('click', nextQuestion);
+    document.getElementById('showAnswerBtn').addEventListener('click', revealAnswer);
+
+    document.getElementById('answerInput').addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        checkCurrentAnswer();
+      }
+    });
+
+    document.getElementById('newFolderInput').addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') addFolder();
+    });
+
+    document.getElementById('wordInput').addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        saveWord();
+      }
+    });
+
+    document.getElementById('folderSelect').addEventListener('change', () => {
+      state.selectedFolderId = document.getElementById('folderSelect').value;
+      renderAll();
+    });
+
+    document.getElementById('exportBtn').addEventListener('click', () => {
+      const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'english-vocab.json';
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+
+    document.getElementById('importBtn').addEventListener('click', () => {
+      document.getElementById('importFile').click();
+    });
+
+    document.getElementById('importFile').addEventListener('change', async (event) => {
+      const file = event.target.files[0];
+      if (!file) return;
+      try {
+        const text = await file.text();
+        const parsed = JSON.parse(text);
+        if (!parsed || !Array.isArray(parsed.folders) || !Array.isArray(parsed.words)) {
+          throw new Error('格式錯誤');
+        }
+        state = parsed;
+        saveState();
+        renderAll();
+        alert('匯入完成');
+      } catch (error) {
+        alert('匯入失敗：檔案格式不正確');
+      } finally {
+        event.target.value = '';
+      }
+    });
+
+    renderAll();
+    resetWordForm();
+  </script>
+</body>
+</html>
