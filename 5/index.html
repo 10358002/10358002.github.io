@@ -135,53 +135,6 @@
       cursor: pointer;
     }
 
-    .mobile-controls {
-      position: absolute;
-      left: 0;
-      right: 0;
-      bottom: 20px;
-      display: none;
-      justify-content: space-between;
-      align-items: flex-end;
-      padding: 0 18px;
-      z-index: 11;
-      pointer-events: none;
-    }
-
-    .mobile-btn {
-      pointer-events: auto;
-      width: 76px;
-      height: 76px;
-      border: 1px solid rgba(255,255,255,0.25);
-      border-radius: 50%;
-      background: rgba(9, 18, 30, 0.46);
-      color: white;
-      font-size: 2rem;
-      font-weight: 900;
-      box-shadow: 0 10px 20px rgba(0,0,0,0.18);
-      backdrop-filter: blur(4px);
-      user-select: none;
-      touch-action: none;
-    }
-
-    .mobile-btn:active,
-    .mobile-btn.active {
-      background: rgba(110, 176, 250, 0.7);
-      transform: scale(0.98);
-    }
-
-    @media (pointer: coarse) {
-      .mobile-controls {
-        display: flex;
-      }
-    }
-
-    @media (max-width: 820px) {
-      .mobile-controls {
-        display: flex;
-      }
-    }
-
     .key-panel {
       position: absolute;
       right: 16px;
@@ -277,23 +230,14 @@
     <div id="toast" class="toast">觸碰螢幕可跳躍，電腦請用自訂鍵盤操控</div>
     <button id="configButton" class="config-btn" type="button">鍵盤設定</button>
 
-    <div class="mobile-controls" aria-label="手機移動控制">
-      <button id="leftBtn" class="mobile-btn" type="button" aria-label="左移">◀</button>
-      <button id="rightBtn" class="mobile-btn" type="button" aria-label="右移">▶</button>
-    </div>
-
     <div id="overlay" class="overlay">
-      <div class="menu-panel">
-        <h2 id="menuTitle">開始遊戲</h2>
-        <p id="menuText">避開障礙物，衝到更高分！</p>
-        <div class="menu-buttons">
-          <button id="primaryBtn" class="action-btn" type="button">開始遊戲</button>
-          <button id="secondaryBtn" class="action-btn secondary" type="button">再來一次</button>
-        </div>
-      </div>
+      <div class="menu-title" id="menuTitle">開始遊戲</div>
+      <div class="menu-text" id="menuText">避開障礙物，衝到更高分！</div>
+      <button class="primary-btn" id="primaryBtn" type="button">開始遊戲</button>
+      <button class="secondary-btn" id="secondaryBtn" type="button">再來一次</button>
     </div>
 
-    <div id="keyPanel" class="key-panel" aria-label="鍵盤設定">
+    <div class="key-panel" aria-label="鍵盤設定">
       <div class="key-row">
         <span>左移</span>
         <button type="button" data-action="left">A</button>
@@ -314,11 +258,6 @@
     </div>
 
     <div class="rotate-tip">請將裝置轉成橫向<br/>開始遊戲</div>
-
-    <div class="mobile-controls">
-      <button class="mobile-btn" id="leftBtn">←</button>
-      <button class="mobile-btn" id="rightBtn">→</button>
-    </div>
   </div>
 
   <script>
@@ -338,8 +277,6 @@
     const secondaryBtn = document.getElementById('secondaryBtn');
     const pauseBtn = document.getElementById('pauseBtn');
     const musicToggleBtn = document.getElementById('musicToggleBtn');
-    const leftBtn = document.getElementById('leftBtn');
-    const rightBtn = document.getElementById('rightBtn');
 
     const BEST_KEY = 'fullScreenRunnerBest';
     const KEY_MAP_KEY = 'fullScreenRunnerKeyMap';
@@ -757,13 +694,6 @@
       });
     }
 
-    function updateMobileControlsVisibility() {
-      const shouldShow = window.matchMedia('(pointer: coarse)').matches || window.innerWidth <= 820;
-      const controls = document.querySelector('.mobile-controls');
-      if (!controls) return;
-      controls.style.display = shouldShow ? 'flex' : 'none';
-    }
-
     function update(dt) {
       if (state.phase !== 'playing') return;
 
@@ -1060,11 +990,6 @@
         keyPanel.classList.add('open');
       });
     });
-
-    leftBtn.addEventListener('contextmenu', (event) => event.preventDefault());
-    rightBtn.addEventListener('contextmenu', (event) => event.preventDefault());
-    bindMobileButton(leftBtn, 'left');
-    bindMobileButton(rightBtn, 'right');
 
     pauseBtn.addEventListener('click', () => {
       if (state.phase === 'playing') {
