@@ -135,6 +135,53 @@
       cursor: pointer;
     }
 
+    .mobile-controls {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 20px;
+      display: none;
+      justify-content: space-between;
+      align-items: flex-end;
+      padding: 0 18px;
+      z-index: 11;
+      pointer-events: none;
+    }
+
+    .mobile-btn {
+      pointer-events: auto;
+      width: 76px;
+      height: 76px;
+      border: 1px solid rgba(255,255,255,0.25);
+      border-radius: 50%;
+      background: rgba(9, 18, 30, 0.46);
+      color: white;
+      font-size: 2rem;
+      font-weight: 900;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.18);
+      backdrop-filter: blur(4px);
+      user-select: none;
+      touch-action: none;
+    }
+
+    .mobile-btn:active,
+    .mobile-btn.active {
+      background: rgba(110, 176, 250, 0.7);
+      transform: scale(0.98);
+    }
+
+    @media (pointer: coarse) {
+      .mobile-controls {
+        display: flex;
+      }
+    }
+
+    @media (max-width: 820px) {
+      .mobile-controls {
+        display: flex;
+      }
+    }
+
     .key-panel {
       position: absolute;
       right: 16px;
@@ -230,6 +277,11 @@
     <div id="toast" class="toast">觸碰螢幕可跳躍，電腦請用自訂鍵盤操控</div>
     <button id="configButton" class="config-btn" type="button">鍵盤設定</button>
 
+    <div class="mobile-controls" aria-label="手機移動控制">
+      <button id="leftBtn" class="mobile-btn" type="button" aria-label="左移">◀</button>
+      <button id="rightBtn" class="mobile-btn" type="button" aria-label="右移">▶</button>
+    </div>
+
     <div id="overlay" class="overlay">
       <div class="menu-panel">
         <h2 id="menuTitle">開始遊戲</h2>
@@ -262,6 +314,11 @@
     </div>
 
     <div class="rotate-tip">請將裝置轉成橫向<br/>開始遊戲</div>
+
+    <div class="mobile-controls">
+      <button class="mobile-btn" id="leftBtn">←</button>
+      <button class="mobile-btn" id="rightBtn">→</button>
+    </div>
   </div>
 
   <script>
@@ -281,6 +338,8 @@
     const secondaryBtn = document.getElementById('secondaryBtn');
     const pauseBtn = document.getElementById('pauseBtn');
     const musicToggleBtn = document.getElementById('musicToggleBtn');
+    const leftBtn = document.getElementById('leftBtn');
+    const rightBtn = document.getElementById('rightBtn');
 
     const BEST_KEY = 'fullScreenRunnerBest';
     const KEY_MAP_KEY = 'fullScreenRunnerKeyMap';
@@ -682,32 +741,27 @@
       if (action === 'jump') input.jump = isPressed;
     }
 
-    function processDesktopInput(dt) {
-      const moveAxis = (input.right ? 1 : 0) - (input.left ? 1 : 0);
-      player.x += moveAxis * player.moveSpeed * (dt / 1000);
-      player.x = Math.max(30, Math.min(canvas.width / (window.devicePixelRatio || 1) - 80, player.x));
+    function bindMobileButton(button, action) {
+      const setPressed = (pressed) => {
+        handleInput(action, pressed);
+        button.classList.toggle('active', pressed);
+      };
 
-      if (input.jump && player.grounded) {
-        triggerJump();
-      }
+      button.addEventListener('pointerdown', (event) => {
+        event.preventDefault();
+        setPressed(true);
+      });
+
+      ['pointerup', 'pointerleave', 'pointercancel'].forEach((eventName) => {
+        button.addEventListener(eventName, () => setPressed(false));
+      });
     }
 
-    function handleHit() {
-      if (player.invincible > 0 || state.phase !== 'playing') return;
-
-      player.lives -= 1;
-      player.invincible = 1200;
-      state.hitFlash = 0.8;
-      playSfx('hit');
-      toast.textContent = `撞到了！還剩 ${player.lives} 條命`;
-      updateHUD();
-
-      if (player.lives <= 0) {
-        endGame();
-        return;
-      }
-
-      spawnParticle(player.x + player.w / 2, player.y + player.h / 2, '#ff5959', 20);
+    function updateMobileControlsVisibility() {
+      const shouldShow = window.matchMedia('(pointer: coarse)').matches || window.innerWidth <= 820;
+      const controls = document.querySelector('.mobile-controls');
+      if (!controls) return;
+      controls.style.display = shouldShow ? 'flex' : 'none';
     }
 
     function update(dt) {
@@ -1006,6 +1060,9 @@
         keyPanel.classList.add('open');
       });
     });
+
+    bindMobileButton(leftBtn, 'left');
+    bindMobileButton(rightBtn, 'right');
 
     window.addEventListener('resize', () => {
       setCanvasSize();
