@@ -229,44 +229,103 @@ function el(tag, props = {}, ...kids) {
   return e;
 }
 
-/* ---------- 資料 ---------- */
-function sample() {
-  const a = uid(), b = uid();
+function ensureList(values, fallback) {
+  const out = [];
+  const seen = new Set();
+  (values || []).forEach(v => {
+    const s = String(v || '').trim();
+    if (s && !seen.has(s)) { seen.add(s); out.push(s); }
+  });
+  (fallback || []).forEach(v => {
+    const s = String(v || '').trim();
+    if (s && !seen.has(s)) { seen.add(s); out.push(s); }
+  });
+  return out;
+}
+
+function normalizeStateData(d) {
+  const base = d || {};
+  const chars = Array.isArray(base.characters) ? base.characters : [];
+  const events = Array.isArray(base.events) ? base.events : [];
+  const regions = ensureList(base.regions, ['中國', '日本', '歐洲', '美洲', '中東', '東南亞']);
+  const families = ensureList(base.families, ['王氏', '李氏', '張氏', '陳氏', '居禮家族', '愛因斯坦家族']);
+
+  chars.forEach(c => {
+    if (!c.region && regions.length) c.region = regions[0];
+    if (!c.family && families.length) c.family = families[0];
+    if (c.order == null) c.order = 0;
+  });
+  events.forEach(e => {
+    if (!e.region && regions.length) e.region = regions[0];
+  });
+
   return {
-    title: '兩位科學家的年代',
+    title: String(base.title || '記事年表'),
+    theme: base.theme || null,
+    regions,
+    families,
+    characters: chars,
+    events: events
+  };
+}
+
+function sample() {
+  const a = uid();
+  const b = uid();
+  return {
+    title: '記事年表',
     theme: null,
+    regions: ['中國', '日本', '歐洲', '美洲', '中東', '東南亞'],
+    families: ['王氏', '李氏', '張氏', '陳氏', '居禮家族', '愛因斯坦家族'],
     characters: [
-      { id: a, name: '瑪麗·居禮', birth: 1867, death: 1934, color: COLORS[0] },
-      { id: b, name: '愛因斯坦', birth: 1879, death: 1955, color: COLORS[1] }
+      { id: a, name: '瑪麗·居禮', birth: 1867, death: 1934, color: COLORS[0], region: '歐洲', family: '居禮家族', order: 0 },
+      { id: b, name: '愛因斯坦', birth: 1879, death: 1955, color: COLORS[1], region: '歐洲', family: '愛因斯坦家族', order: 1 }
     ],
     events: [
-      { id: uid(), year: 1898, type: 'minor', title: '發現釙與鐳', desc: '與皮耶·居禮共同發現兩種新元素。', chars: [a] },
-      { id: uid(), year: 1903, type: 'major', title: '獲頒諾貝爾物理學獎', desc: '因放射性研究與貝克勒、皮耶·居禮共同獲獎。', chars: [a] },
-      { id: uid(), year: 1905, type: 'major', title: '奇蹟年', desc: '發表光電效應、布朗運動與狹義相對論等論文。', chars: [b] },
-      { id: uid(), year: 1911, type: 'minor', title: '獲頒諾貝爾化學獎', desc: '成為首位兩度獲得諾貝爾獎的人。', chars: [a] },
-      { id: uid(), year: 1915, type: 'major', title: '提出廣義相對論', desc: '重力被描述為時空的彎曲。', chars: [b] },
-      { id: uid(), year: 1921, type: 'minor', title: '獲頒諾貝爾物理學獎', desc: '表彰其對光電效應定律的發現。', chars: [b] },
-      { id: uid(), year: 1927, type: 'major', title: '第五屆索爾維會議', desc: '物理學界群英齊聚布魯塞爾，討論量子理論。', chars: [a, b] }
+      { id: uid(), year: 1898, type: 'minor', title: '發現釙與鐳', desc: '與皮耶·居禮共同發現兩種新元素。', chars: [a], region: '歐洲' },
+      { id: uid(), year: 1903, type: 'major', title: '獲頒諾貝爾物理學獎', desc: '因放射性研究與貝克勒、皮耶·居禮共同獲獎。', chars: [a], region: '歐洲' },
+      { id: uid(), year: 1905, type: 'major', title: '奇蹟年', desc: '發表光電效應、布朗運動與狹義相對論等論文。', chars: [b], region: '歐洲' },
+      { id: uid(), year: 1911, type: 'minor', title: '獲頒諾貝爾化學獎', desc: '成為首位兩度獲得諾貝爾獎的人。', chars: [a], region: '歐洲' },
+      { id: uid(), year: 1915, type: 'major', title: '提出廣義相對論', desc: '重力被描述為時空的彎曲。', chars: [b], region: '歐洲' },
+      { id: uid(), year: 1921, type: 'minor', title: '獲頒諾貝爾物理學獎', desc: '表彰其對光電效應定律的發現。', chars: [b], region: '歐洲' },
+      { id: uid(), year: 1927, type: 'major', title: '第五屆索爾維會議', desc: '物理學界群英齊聚布魯塞爾，討論量子理論。', chars: [a, b], region: '歐洲' }
     ]
   };
 }
+
 const valid = d => d && Array.isArray(d.events) && Array.isArray(d.characters);
+
 function load() {
-  try { const s = localStorage.getItem(KEY); if (s) { const d = JSON.parse(s); if (valid(d)) return d; } } catch (e) {}
+  try {
+    const s = localStorage.getItem(KEY);
+    if (s) {
+      const d = JSON.parse(s);
+      if (valid(d)) return normalizeStateData(d);
+    }
+  } catch (e) {}
   return sample();
 }
+
 let state = load();
+
 function save(msg) {
-  try { localStorage.setItem(KEY, JSON.stringify(state)); if (msg) toast('已儲存於此瀏覽器'); }
-  catch (e) { toast('無法寫入瀏覽器儲存，請改用「匯出備份」'); }
-}
-let toastT;
-function toast(t) {
-  const n = $('#toast'); n.textContent = t; n.classList.add('show');
-  clearTimeout(toastT); toastT = setTimeout(() => n.classList.remove('show'), 2200);
+  try {
+    localStorage.setItem(KEY, JSON.stringify(state));
+    if (msg) toast('已儲存於此瀏覽器');
+  } catch (e) {
+    toast('無法寫入瀏覽器儲存，請改用「匯出備份」');
+  }
 }
 
-/* ---------- 工具 ---------- */
+let toastT;
+function toast(t) {
+  const n = $('#toast');
+  n.textContent = t;
+  n.classList.add('show');
+  clearTimeout(toastT);
+  toastT = setTimeout(() => n.classList.remove('show'), 2200);
+}
+
 const fmtYear = y => y < 0 ? `前 ${-y}` : String(y);
 function ageText(c, y) {
   if (y < c.birth) return '尚未出生';
@@ -276,11 +335,128 @@ function ageText(c, y) {
 }
 const charById = id => state.characters.find(c => c.id === id);
 const sortedEvents = () => [...state.events].sort((a, b) => a.year - b.year);
+const sortedCharacters = () => [...state.characters].sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 
-/* ---------- 主題 ---------- */
+function moveCharacter(id, step) {
+  const items = sortedCharacters();
+  const index = items.findIndex(c => c.id === id);
+  if (index < 0) return;
+  const next = index + step;
+  if (next < 0 || next >= items.length) return;
+  const [a] = items.splice(index, 1);
+  items.splice(next, 0, a);
+  state.characters = items.map((c, idx) => ({ ...c, order: idx }));
+  renderChars();
+  render();
+  save();
+}
+
+function uniqueList(items) {
+  return [...new Set(items.filter(Boolean))];
+}
+
+function fillSelect(select, items, currentValue = '') {
+  const values = items && items.length ? items : [''];
+  select.replaceChildren();
+  const add = (v, label) => {
+    const option = el('option', { value: v }, label);
+    if (currentValue === v) option.selected = true;
+    select.append(option);
+  };
+  add('', '未指定');
+  values.forEach(v => add(v, v));
+  if (!currentValue) select.value = '';
+}
+
+function renderMetadataSelectors() {
+  const evRegion = $('#evRegion');
+  fillSelect(evRegion, state.regions, evRegion.value || '');
+  const chRegion = $('#chRegion');
+  fillSelect(chRegion, state.regions, chRegion.value || '');
+  const chFamily = $('#chFamily');
+  fillSelect(chFamily, state.families, chFamily.value || '');
+}
+
+function renderRegions() {
+  const list = $('#regionList');
+  list.replaceChildren();
+  if (!state.regions.length) {
+    list.append(el('li', {}, el('small', {}, '尚無地區')));
+    return;
+  }
+  state.regions.forEach(region => {
+    list.append(el('li', {},
+      el('span', { class: 'nm' }, region),
+      el('button', { class: 'ibtn del', type: 'button', onclick: () => {
+        if (!confirm(`刪除地區「${region}」？相關人物/事件中的此地區會保留為未指定。`)) return;
+        state.regions = state.regions.filter(r => r !== region);
+        state.characters.forEach(c => { if (c.region === region) c.region = ''; });
+        state.events.forEach(e => { if (e.region === region) e.region = ''; });
+        renderMetadataSelectors();
+        renderRegions();
+        renderFamilies();
+        renderChars();
+        render();
+        save();
+      } }, '刪除')));
+  });
+}
+
+function renderFamilies() {
+  const list = $('#familyList');
+  list.replaceChildren();
+  if (!state.families.length) {
+    list.append(el('li', {}, el('small', {}, '尚無家族')));
+    return;
+  }
+  state.families.forEach(family => {
+    list.append(el('li', {},
+      el('span', { class: 'nm' }, family),
+      el('button', { class: 'ibtn del', type: 'button', onclick: () => {
+        if (!confirm(`刪除家族「${family}」？相關人物的此家族會保留為未指定。`)) return;
+        state.families = state.families.filter(f => f !== family);
+        state.characters.forEach(c => { if (c.family === family) c.family = ''; });
+        renderMetadataSelectors();
+        renderRegions();
+        renderFamilies();
+        renderChars();
+        render();
+        save();
+      } }, '刪除')));
+  });
+}
+
+$('#regionBtn').onclick = () => {
+  $('#chDlg').showModal();
+  setTimeout(() => $('#regionInput').focus(), 100);
+};
+$('#familyBtn').onclick = () => {
+  $('#chDlg').showModal();
+  setTimeout(() => $('#familyInput').focus(), 100);
+};
+$('#addRegionBtn').onclick = () => {
+  const v = $('#regionInput').value.trim();
+  if (!v) { toast('請輸入地區名稱'); return; }
+  if (!state.regions.includes(v)) state.regions.push(v);
+  $('#regionInput').value = '';
+  renderMetadataSelectors();
+  renderRegions();
+  save();
+};
+$('#addFamilyBtn').onclick = () => {
+  const v = $('#familyInput').value.trim();
+  if (!v) { toast('請輸入家族名稱'); return; }
+  if (!state.families.includes(v)) state.families.push(v);
+  $('#familyInput').value = '';
+  renderMetadataSelectors();
+  renderFamilies();
+  save();
+};
+
 function currentTheme() {
   return state.theme || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
 }
+
 function applyTheme() {
   const t = currentTheme();
   document.documentElement.dataset.theme = t;
@@ -288,37 +464,38 @@ function applyTheme() {
 }
 $('#themeBtn').onclick = () => { state.theme = currentTheme() === 'dark' ? 'light' : 'dark'; applyTheme(); save(); };
 
-/* ---------- 渲染 ---------- */
 function render() {
   $('#titleInput').value = state.title || '';
-  document.title = (state.title || '年表時間軸');
+  document.title = state.title || '記事年表';
   const tl = $('#tl');
   tl.replaceChildren();
   const only = $('#onlyMajor').checked;
   const list = sortedEvents().filter(e => !only || e.type === 'major');
+
   if (!list.length) {
     tl.append(el('div', { class: 'empty' }, '尚無事件，點選右上角「＋ 新增事件」開始建立。'));
     tl.style.setProperty('--x', '0');
     return;
   }
+
   list.forEach(e => {
+    const yearRegions = uniqueList(list.filter(item => item.year === e.year).map(item => item.region));
+    const sameYearBadge = yearRegions.length > 1 ? el('span', { class: 'year-sub' }, '同年跨區') : '';
+    const regionBadge = e.region ? el('span', { class: 'region-tag' }, e.region) : '';
     const chips = el('div', { class: 'chips' });
     e.chars.map(charById).filter(Boolean).forEach(c =>
       chips.append(el('span', { class: 'chip', style: `--c:${c.color}` }, el('i'), c.name, el('b', {}, '· ' + ageText(c, e.year))))
     );
-    const meta = el('div', { class: 'meta' },
-      e.region ? el('span', { class: 'region-tag' }, e.region) : '',
-      e.family ? el('span', { class: 'region-tag' }, e.family) : '',
-      el('span', { class: 'year-sub' }, fmtYear(e.year))
-    );
+
     const card = el('div', { class: 'card' },
       el('div', { class: 'acts' },
         el('button', { class: 'ibtn', title: '編輯', onclick: () => openEvent(e.id) }, '編輯'),
         el('button', { class: 'ibtn del', title: '刪除', onclick: () => delEvent(e.id) }, '刪除')),
       el('h3', {}, e.title),
+      el('div', { class: 'meta' }, regionBadge, sameYearBadge),
       e.desc ? el('p', {}, e.desc) : '',
-      e.chars.length ? chips : '',
-      meta);
+      e.chars.length ? chips : '');
+
     tl.append(el('article', { class: 'ev ' + e.type },
       el('div', { class: 'yr' }, fmtYear(e.year)),
       el('div', { class: 'dotw' }, el('div', { class: 'dot' })),
@@ -326,9 +503,12 @@ function render() {
   });
 }
 $('#onlyMajor').onchange = render;
-$('#titleInput').oninput = e => { state.title = e.target.value; document.title = state.title || '年表時間軸'; save(); };
+$('#titleInput').oninput = e => {
+  state.title = e.target.value;
+  document.title = state.title || '記事年表';
+  save();
+};
 
-/* ---------- 事件對話框 ---------- */
 const evDlg = $('#evDlg');
 let editingId = null;
 function openEvent(id) {
@@ -338,7 +518,9 @@ function openEvent(id) {
   $('#evYear').value = e ? e.year : '';
   $('#evTitle').value = e ? e.title : '';
   $('#evDesc').value = e ? e.desc : '';
+  $('#evRegion').value = e && e.region ? e.region : '';
   document.querySelector(`input[name=etype][value=${e ? e.type : 'major'}]`).checked = true;
+
   const box = $('#evChars');
   box.replaceChildren();
   if (!state.characters.length) box.append(el('p', { class: 'hint' }, '尚未建立人物，可先到「人物」新增。'));
@@ -347,13 +529,8 @@ function openEvent(id) {
     cb.checked = e ? e.chars.includes(c.id) : false;
     box.append(el('label', { class: 'pick', style: `--c:${c.color}` }, cb, el('span', {}, c.name)));
   });
-  const regionSel = $('#evRegion');
-  regionSel.replaceChildren(el('option', { value: '' }, '無'));
-  state.characters.forEach(c => {
-    if (c.region && !regionSel.querySelector(`option[value="${c.region}"]`))
-      regionSel.append(el('option', { value: c.region }, c.region));
-  });
-  regionSel.value = e ? e.region : '';
+
+  renderMetadataSelectors();
   evDlg.showModal();
 }
 $('#addBtn').onclick = () => openEvent();
@@ -363,58 +540,87 @@ $('#evForm').addEventListener('submit', ev => {
   const year = parseInt($('#evYear').value, 10);
   const title = $('#evTitle').value.trim();
   if (isNaN(year) || !title) { toast('請填寫年份與標題'); return; }
+
   const data = {
-    year, title,
+    year,
+    title,
     desc: $('#evDesc').value.trim(),
     type: document.querySelector('input[name=etype]:checked').value,
     chars: [...$('#evChars').querySelectorAll('input:checked')].map(i => i.value),
-    region: $('#evRegion').value
+    region: $('#evRegion').value || ''
   };
+
   if (editingId) Object.assign(state.events.find(x => x.id === editingId), data);
   else state.events.push({ id: uid(), ...data });
-  evDlg.close(); render(); save();
+  evDlg.close();
+  render();
+  save();
 });
+
 function delEvent(id) {
   if (!confirm('確定刪除此事件？')) return;
   state.events = state.events.filter(e => e.id !== id);
-  render(); save();
+  render();
+  save();
 }
 
-/* ---------- 人物對話框 ---------- */
 const chDlg = $('#chDlg');
 let editingChar = null;
 function nextColor() { return COLORS[state.characters.length % COLORS.length]; }
 function resetCharForm() {
   editingChar = null;
-  $('#chName').value = ''; $('#chBirth').value = ''; $('#chDeath').value = '';
+  $('#chName').value = '';
+  $('#chBirth').value = '';
+  $('#chDeath').value = '';
   $('#chColor').value = nextColor();
+  $('#chRegion').value = '';
+  $('#chFamily').value = '';
   $('#chFormHead').textContent = '新增人物';
   $('#chSubmit').textContent = '加入';
 }
+
 function renderChars() {
   const ul = $('#clist');
   ul.replaceChildren();
   if (!state.characters.length) ul.append(el('li', {}, el('small', {}, '尚無人物')));
-  state.characters.forEach(c => {
+
+  const items = sortedCharacters();
+  items.forEach(c => {
+    const info = [c.region || '未指定地區', c.family || '未指定家族'].join(' · ');
     ul.append(el('li', {},
       el('span', { class: 'sw', style: `background:${c.color}` }),
-      el('span', { class: 'nm' }, c.name, ' ', el('small', {}, `${fmtYear(c.birth)} – ${c.death != null ? fmtYear(c.death) : ''}`)),
+      el('span', { class: 'nm' }, c.name, ' ', el('small', {}, `${fmtYear(c.birth)} – ${c.death != null ? fmtYear(c.death) : ''}　${info}`)),
+      el('button', { class: 'ibtn', type: 'button', onclick: () => moveCharacter(c.id, -1) }, '↑'),
+      el('button', { class: 'ibtn', type: 'button', onclick: () => moveCharacter(c.id, 1) }, '↓'),
       el('button', { class: 'ibtn', type: 'button', onclick: () => {
         editingChar = c.id;
-        $('#chName').value = c.name; $('#chBirth').value = c.birth; $('#chDeath').value = c.death ?? '';
+        $('#chName').value = c.name;
+        $('#chBirth').value = c.birth;
+        $('#chDeath').value = c.death ?? '';
         $('#chColor').value = c.color;
-        $('#chFormHead').textContent = '編輯人物'; $('#chSubmit').textContent = '更新';
+        $('#chRegion').value = c.region || '';
+        $('#chFamily').value = c.family || '';
+        $('#chFormHead').textContent = '編輯人物';
+        $('#chSubmit').textContent = '更新';
       } }, '編輯'),
       el('button', { class: 'ibtn del', type: 'button', onclick: () => {
         if (!confirm(`刪除「${c.name}」？相關事件中的此人物也會一併移除。`)) return;
         state.characters = state.characters.filter(x => x.id !== c.id);
         state.events.forEach(e => e.chars = e.chars.filter(i => i !== c.id));
         if (editingChar === c.id) resetCharForm();
-        renderChars(); render(); save();
+        renderChars();
+        render();
+        save();
       } }, '刪除')));
   });
 }
-$('#charBtn').onclick = () => { resetCharForm(); renderChars(); chDlg.showModal(); };
+
+$('#charBtn').onclick = () => {
+  resetCharForm();
+  renderMetadataSelectors();
+  renderChars();
+  chDlg.showModal();
+};
 $('#chDone').onclick = () => chDlg.close();
 $('#chReset').onclick = resetCharForm;
 $('#chForm').addEventListener('submit', ev => {
@@ -425,45 +631,79 @@ $('#chForm').addEventListener('submit', ev => {
   const death = dv === '' ? null : parseInt(dv, 10);
   if (!name || isNaN(birth)) { toast('請填寫姓名與出生年'); return; }
   if (death != null && (isNaN(death) || death < birth)) { toast('逝世年不可早於出生年'); return; }
-  const data = { name, birth, death, color: $('#chColor').value };
+
+  const data = {
+    name,
+    birth,
+    death,
+    color: $('#chColor').value,
+    region: $('#chRegion').value || '',
+    family: $('#chFamily').value || ''
+  };
+
   if (editingChar) Object.assign(state.characters.find(c => c.id === editingChar), data);
-  else state.characters.push({ id: uid(), ...data });
-  resetCharForm(); renderChars(); render(); save();
+  else state.characters.push({ id: uid(), order: state.characters.length, ...data });
+
+  resetCharForm();
+  renderMetadataSelectors();
+  renderChars();
+  render();
+  save();
 });
 
-/* ---------- 儲存 / 匯出 / 匯入 / 清空 ---------- */
 $('#saveBtn').onclick = () => save(true);
 function download(blob, name) {
   const a = el('a', { href: URL.createObjectURL(blob), download: name });
-  document.body.append(a); a.click(); a.remove();
+  document.body.append(a);
+  a.click();
+  a.remove();
   setTimeout(() => URL.revokeObjectURL(a.href), 2000);
 }
-const fileName = ext => (state.title || '年表時間軸').replace(/[\\/:*?"<>|]/g, '_') + '.' + ext;
+const fileName = ext => (state.title || '記事年表').replace(/[\\/:*?"<>|]/g, '_') + '.' + ext;
 $('#exportBtn').onclick = () => {
   download(new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' }), fileName('json'));
   toast('已匯出備份檔');
 };
 $('#importFile').onchange = async ev => {
-  const f = ev.target.files[0]; ev.target.value = '';
+  const f = ev.target.files[0];
+  ev.target.value = '';
   if (!f) return;
   try {
     const d = JSON.parse(await f.text());
     if (!valid(d)) throw 0;
     if (!confirm('匯入將取代目前的內容，確定嗎？')) return;
-    state = d; applyTheme(); render(); save(); toast('匯入完成');
-  } catch (e) { toast('檔案格式不正確'); }
+    state = normalizeStateData(d);
+    applyTheme();
+    render();
+    renderMetadataSelectors();
+    renderRegions();
+    renderFamilies();
+    renderChars();
+    save();
+    toast('匯入完成');
+  } catch (e) {
+    toast('檔案格式不正確');
+  }
 };
 $('#clearBtn').onclick = () => {
   if (!confirm('清空所有事件與人物？此動作無法復原（建議先匯出備份）。')) return;
-  state.events = []; state.characters = []; render(); save();
+  state.events = [];
+  state.characters = [];
+  state.regions = [];
+  state.families = [];
+  render();
+  renderChars();
+  renderRegions();
+  renderFamilies();
+  save();
 };
 
-/* ---------- 產生圖片 ---------- */
 function themeColors() {
   const cs = getComputedStyle(document.documentElement);
   const g = n => cs.getPropertyValue(n).trim();
   return { bg: g('--bg'), panel: g('--panel'), ink: g('--ink'), muted: g('--muted'), line: g('--line'), accent: g('--accent') };
 }
+
 function rr(ctx, x, y, w, h, r) {
   r = Math.min(r, w / 2, h / 2);
   ctx.beginPath();
@@ -474,6 +714,7 @@ function rr(ctx, x, y, w, h, r) {
   ctx.arcTo(x, y, x + w, y, r);
   ctx.closePath();
 }
+
 function wrap(ctx, text, maxW) {
   const out = [];
   String(text).split('\n').forEach(para => {
@@ -486,17 +727,17 @@ function wrap(ctx, text, maxW) {
   });
   return out;
 }
+
 function paint(ctx, W, draw, pos) {
   const T = themeColors();
   const pad = 80, yearR = pad + 150, lineX = pad + 190, cardX = pad + 232, cardW = W - pad - cardX;
   const list = sortedEvents().filter(e => !$('#onlyMajor').checked || e.type === 'major');
   let y = pad;
 
-  // 標題
   let size = 46;
   ctx.font = `600 ${size}px ${FONT}`;
   while (ctx.measureText(state.title || '').width > W - pad * 2 && size > 22) { size -= 2; ctx.font = `600 ${size}px ${FONT}`; }
-  if (draw) { ctx.textAlign = 'center'; ctx.fillStyle = T.ink; ctx.fillText(state.title || '年表時間軸', W / 2, y + 44); }
+  if (draw) { ctx.textAlign = 'center'; ctx.fillStyle = T.ink; ctx.fillText(state.title || '記事年表', W / 2, y + 44); }
   y += 84;
   if (draw) {
     ctx.font = `400 20px ${FONT}`; ctx.fillStyle = T.muted;
@@ -522,7 +763,6 @@ function paint(ctx, W, draw, pos) {
     ctx.font = tf; const tLines = wrap(ctx, e.title, innerW);
     ctx.font = df; const dLines = e.desc ? wrap(ctx, e.desc, innerW) : [];
 
-    // 人物標籤排版
     const chH = major ? 34 : 30;
     ctx.font = `400 ${major ? 18 : 16}px ${FONT}`;
     const chips = []; let cx = 0, row = 0;
@@ -534,8 +774,7 @@ function paint(ctx, W, draw, pos) {
       cx += w + 8;
     });
     const rows = chips.length ? chips[chips.length - 1].row + 1 : 0;
-
-    const h = padY * 2 + tLines.length * tlh + (dLines.length ? 6 + dLines.length * dlh : 0) + (rows ? 14 + rows * (chH + 8) - 8 : 0);
+    const h = padY * 2 + tLines.length * tlh + (dLines.length ? 6 + dLines.length * dlh : 0) + (rows ? 14 + rows * (chH + 8) - 8 : 0) + (e.region ? 18 : 0);
     const top = y;
     const dotY = top + padY + (major ? 22 : 17);
     if (first == null) first = dotY; last = dotY;
@@ -545,11 +784,9 @@ function paint(ctx, W, draw, pos) {
         ctx.fillStyle = T.panel; ctx.strokeStyle = T.line; ctx.lineWidth = 1.5;
         rr(ctx, cardX, top, cardW, h, 14); ctx.fill(); ctx.stroke();
       }
-      // 年份
       ctx.textAlign = 'right'; ctx.fillStyle = major ? T.accent : T.muted;
       ctx.font = major ? `500 34px ${FONT}` : `400 22px ${FONT}`;
       ctx.fillText(fmtYear(e.year), yearR, dotY + (major ? 12 : 8));
-      // 圓點
       ctx.fillStyle = T.bg; ctx.beginPath(); ctx.arc(lineX, dotY, major ? 12 : 8, 0, 7); ctx.fill();
       if (major) {
         ctx.strokeStyle = T.accent; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(lineX, dotY, 11, 0, 7); ctx.stroke();
@@ -557,12 +794,17 @@ function paint(ctx, W, draw, pos) {
       } else {
         ctx.strokeStyle = T.muted; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(lineX, dotY, 5, 0, 7); ctx.stroke();
       }
-      // 文字
+
       ctx.textAlign = 'left';
       let ty = top + padY; const tx = cardX + padX;
       ctx.font = tf; ctx.fillStyle = T.ink;
       tLines.forEach((l, i) => ctx.fillText(l, tx, ty + (major ? 30 : 24) + i * tlh));
       ty += tLines.length * tlh;
+      if (e.region) {
+        ty += 6; ctx.font = `400 16px ${FONT}`; ctx.fillStyle = T.muted;
+        ctx.fillText(`地區：${e.region}`, tx, ty + 18);
+        ty += 18;
+      }
       if (dLines.length) {
         ty += 6; ctx.font = df; ctx.fillStyle = T.muted;
         dLines.forEach((l, i) => ctx.fillText(l, tx, ty + (major ? 23 : 20) + i * dlh));
@@ -596,6 +838,7 @@ function paint(ctx, W, draw, pos) {
   }
   return { H: y + pad, first, last };
 }
+
 $('#pngBtn').onclick = () => {
   const W = 1200;
   const probe = document.createElement('canvas').getContext('2d');
@@ -603,19 +846,25 @@ $('#pngBtn').onclick = () => {
   const H = Math.ceil(m.H);
   const scale = Math.min(2, 16000 / H);
   const cv = document.createElement('canvas');
-  cv.width = Math.round(W * scale); cv.height = Math.round(H * scale);
+  cv.width = Math.round(W * scale);
+  cv.height = Math.round(H * scale);
   const ctx = cv.getContext('2d');
   ctx.scale(scale, scale);
-  ctx.fillStyle = themeColors().bg; ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = themeColors().bg;
+  ctx.fillRect(0, 0, W, H);
   ctx.textBaseline = 'alphabetic';
   paint(ctx, W, true, m);
   cv.toBlob(b => {
     if (!b) { toast('圖片產生失敗'); return; }
-    download(b, fileName('png')); toast('圖片已產生');
+    download(b, fileName('png'));
+    toast('圖片已產生');
   }, 'image/png');
 };
 
-/* ---------- 啟動 ---------- */
+renderMetadataSelectors();
+renderRegions();
+renderFamilies();
+renderChars();
 applyTheme();
 render();
 })();
