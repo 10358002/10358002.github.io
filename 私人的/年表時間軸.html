@@ -118,6 +118,18 @@ input[type=color].in{padding:2px;height:38px;cursor:pointer}
   .major .card{padding:14px 16px 16px}
   .two{grid-template-columns:1fr}
 }
+
+/* button styles */
+.acts{position:absolute;top:8px;right:10px;display:flex;gap:2px;opacity:0;transition:opacity .2s}
+.minor .acts{top:-4px}
+.ev:hover .acts,.acts:focus{opacity:1}
+@media (hover:none){.acts{opacity:.7}}
+.ibtn{border:1px solid var(--line);background:rgba(255,255,255,.22);color:var(--ink);cursor:pointer;padding:4px 10px;border-radius:999px;font-size:.78rem;line-height:1.2;transition:all .2s;white-space:nowrap}
+.ibtn:hover{border-color:var(--accent);color:var(--accent);background:rgba(138,106,59,.04)}
+.ibtn.del{border-color:rgba(181,82,59,.35);color:#b5523b;background:rgba(181,82,59,.06)}
+.ibtn.del:hover{border-color:#b5523b;color:#b5523b;background:rgba(181,82,59,.1)}
+.clist .ibtn{padding:3px 8px;min-width:38px}
+.clist .ibtn.del{min-width:46px}
 </style>
 </head>
 <body>
