@@ -6,21 +6,42 @@
   <title>英文單字練習站</title>
   <style>
     :root {
-      --bg: #f4efe9;
-      --bg-2: #efe5d8;
+      --bg: #f6f0e7;
+      --bg-2: #f0e3cc;
       --panel: rgba(255,255,255,0.72);
       --panel-strong: rgba(255,255,255,0.9);
-      --ink: #1f2430;
-      --muted: #657086;
-      --line: rgba(76, 90, 108, 0.18);
-      --accent: #6e7ad8;
-      --accent-2: #8b6ed6;
-      --accent-3: #d8c0ff;
-      --success: #2d9b79;
-      --warn: #d68d4c;
-      --danger: #c75f59;
-      --shadow: 0 18px 44px rgba(72, 82, 116, 0.12);
+      --panel-soft: rgba(255,248,236,0.7);
+      --ink: #2b261f;
+      --muted: #766a5d;
+      --line: rgba(121, 98, 58, 0.18);
+      --accent: #b58a4a;
+      --accent-2: #d7b86c;
+      --accent-3: #f0d9a2;
+      --success: #567d59;
+      --warn: #c68342;
+      --danger: #bd5d4a;
+      --shadow: 0 18px 44px rgba(97, 75, 37, 0.12);
       --radius: 22px;
+      --button-text: #fffaf4;
+    }
+
+    body[data-theme="dark"] {
+      --bg: #171712;
+      --bg-2: #24241e;
+      --panel: rgba(38,36,30,0.76);
+      --panel-strong: rgba(53,50,42,0.94);
+      --panel-soft: rgba(74,69,58,0.72);
+      --ink: #f1ebdf;
+      --muted: #d0c1a5;
+      --line: rgba(213, 190, 145, 0.16);
+      --accent: #d9b36a;
+      --accent-2: #f2d38d;
+      --accent-3: #7d6034;
+      --success: #9fc79e;
+      --warn: #efb26d;
+      --danger: #f08b82;
+      --shadow: 0 18px 44px rgba(0,0,0,0.42);
+      --button-text: #1d1205;
     }
 
     * { box-sizing: border-box; }
@@ -37,12 +58,13 @@
       display: flex;
       justify-content: center;
       padding: 24px 16px 40px;
+      transition: background 0.2s ease, color 0.2s ease;
     }
 
     .app {
       width: min(1200px, 100%);
-      background: rgba(255,255,255,0.38);
-      border: 1px solid rgba(255,255,255,0.5);
+      background: rgba(255,255,255,0.18);
+      border: 1px solid rgba(255,255,255,0.4);
       border-radius: 28px;
       box-shadow: var(--shadow);
       backdrop-filter: blur(10px);
@@ -55,7 +77,7 @@
       align-items: center;
       gap: 12px;
       padding: 18px 22px;
-      background: linear-gradient(135deg, rgba(110,122,216,0.12), rgba(139,110,214,0.08));
+      background: linear-gradient(135deg, rgba(181,138,74,0.16), rgba(240,217,162,0.14));
       border-bottom: 1px solid var(--line);
     }
 
@@ -73,10 +95,10 @@
       background: linear-gradient(135deg, var(--accent), var(--accent-2));
       display: grid;
       place-items: center;
-      color: white;
+      color: var(--button-text);
       font-weight: 900;
-      font-size: 1.1rem;
-      box-shadow: 0 10px 20px rgba(110,122,216,0.25);
+      font-size: 1.15rem;
+      box-shadow: 0 10px 20px rgba(181,138,74,0.22);
     }
 
     .brand h1 {
@@ -95,7 +117,7 @@
 
     .btn {
       border: 1px solid var(--line);
-      background: rgba(255,255,255,0.72);
+      background: rgba(255,255,255,0.52);
       color: var(--ink);
       border-radius: 999px;
       padding: 10px 16px;
@@ -108,19 +130,19 @@
 
     .btn:hover {
       transform: translateY(-1px);
-      border-color: rgba(110,122,216,0.5);
+      border-color: rgba(181,138,74,0.5);
     }
 
     .btn.primary {
       background: linear-gradient(135deg, var(--accent), var(--accent-2));
-      color: white;
+      color: var(--button-text);
       border-color: transparent;
     }
 
     .btn.danger {
-      background: rgba(199,95,89,0.08);
+      background: rgba(189,93,74,0.08);
       color: var(--danger);
-      border-color: rgba(199,95,89,0.28);
+      border-color: rgba(189,93,74,0.28);
     }
 
     .layout {
@@ -131,7 +153,7 @@
 
     .sidebar {
       padding: 18px 18px 14px;
-      background: rgba(255,255,255,0.26);
+      background: rgba(255,255,255,0.14);
       border-right: 1px solid var(--line);
     }
 
@@ -172,14 +194,14 @@
       padding: 10px 12px;
       border-radius: 14px;
       border: 1px solid transparent;
-      background: rgba(110,122,216,0.04);
+      background: rgba(181,138,74,0.06);
       cursor: pointer;
       transition: all 0.15s ease;
     }
 
     .folder-item.active {
-      background: linear-gradient(135deg, rgba(110,122,216,0.15), rgba(139,110,214,0.08));
-      border-color: rgba(110,122,216,0.28);
+      background: linear-gradient(135deg, rgba(181,138,74,0.14), rgba(240,217,162,0.1));
+      border-color: rgba(181,138,74,0.28);
     }
 
     .folder-meta {
@@ -227,7 +249,7 @@
     .input, select, textarea {
       width: 100%;
       border: 1px solid var(--line);
-      background: rgba(255,255,255,0.55);
+      background: rgba(255,255,255,0.5);
       border-radius: 14px;
       padding: 11px 12px;
       font: inherit;
@@ -242,8 +264,17 @@
     }
 
     .input:focus, select:focus, textarea:focus {
-      border-color: rgba(110,122,216,0.5);
-      box-shadow: 0 0 0 4px rgba(110,122,216,0.08);
+      border-color: rgba(181,138,74,0.5);
+      box-shadow: 0 0 0 4px rgba(181,138,74,0.08);
+    }
+
+    .label-note {
+      display: block;
+      margin: 12px 0 6px;
+      font-size: 0.76rem;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      text-transform: uppercase;
     }
 
     .section-header {
@@ -299,9 +330,9 @@
     }
 
     .stat-pill {
-      background: rgba(110,122,216,0.08);
+      background: rgba(181,138,74,0.09);
       color: var(--ink);
-      border: 1px solid rgba(110,122,216,0.1);
+      border: 1px solid rgba(181,138,74,0.12);
       border-radius: 999px;
       padding: 8px 12px;
       font-weight: 700;
@@ -319,7 +350,7 @@
       display: flex;
       align-items: center;
       gap: 10px;
-      background: rgba(255,255,255,0.62);
+      background: rgba(255,255,255,0.45);
       border: 1px solid var(--line);
       border-radius: 16px;
       padding: 14px 12px;
@@ -340,13 +371,13 @@
       display: grid;
       place-items: center;
       font-weight: 900;
-      background: linear-gradient(135deg, rgba(110,122,216,0.16), rgba(139,110,214,0.18));
+      background: linear-gradient(135deg, rgba(181,138,74,0.18), rgba(240,217,162,0.18));
       color: var(--accent);
     }
 
     .mode-option.selected {
-      border-color: rgba(110,122,216,0.5);
-      background: linear-gradient(135deg, rgba(110,122,216,0.07), rgba(139,110,214,0.06));
+      border-color: rgba(181,138,74,0.5);
+      background: linear-gradient(135deg, rgba(181,138,74,0.08), rgba(240,217,162,0.08));
       transform: translateY(-1px);
     }
 
@@ -368,7 +399,7 @@
       display: inline-flex;
       align-items: center;
       gap: 8px;
-      background: rgba(255,255,255,0.7);
+      background: rgba(255,255,255,0.56);
       border: 1px solid var(--line);
       border-radius: 999px;
       padding: 8px 10px;
@@ -388,7 +419,7 @@
       overflow: hidden;
       border-radius: 16px;
       border: 1px solid var(--line);
-      background: rgba(255,255,255,0.5);
+      background: rgba(255,255,255,0.45);
     }
 
     .word-table th, .word-table td {
@@ -399,7 +430,7 @@
     }
 
     .word-table th {
-      background: rgba(110,122,216,0.05);
+      background: rgba(181,138,74,0.07);
       font-size: 0.78rem;
       letter-spacing: 0.08em;
       color: var(--muted);
@@ -418,7 +449,7 @@
 
     .mini-btn {
       border: 1px solid var(--line);
-      background: rgba(255,255,255,0.7);
+      background: rgba(255,255,255,0.64);
       border-radius: 999px;
       padding: 5px 10px;
       font-size: 0.76rem;
@@ -427,15 +458,15 @@
     }
 
     .mini-btn.danger {
-      border-color: rgba(199,95,89,0.2);
+      border-color: rgba(189,93,74,0.2);
       color: var(--danger);
-      background: rgba(199,95,89,0.04);
+      background: rgba(189,93,74,0.04);
     }
 
     .practice-box {
       display: none;
-      background: linear-gradient(135deg, rgba(110,122,216,0.08), rgba(139,110,214,0.08));
-      border: 1px solid rgba(110,122,216,0.18);
+      background: linear-gradient(135deg, rgba(181,138,74,0.1), rgba(240,217,162,0.1));
+      border: 1px solid rgba(181,138,74,0.18);
       border-radius: 24px;
       padding: 20px;
       margin-top: 18px;
@@ -459,8 +490,8 @@
       align-items: center;
       padding: 6px 10px;
       border-radius: 999px;
-      background: rgba(45,155,121,0.1);
-      border: 1px solid rgba(45,155,121,0.18);
+      background: rgba(86,125,89,0.12);
+      border: 1px solid rgba(86,125,89,0.18);
       color: var(--success);
       font-weight: 700;
       font-size: 0.78rem;
@@ -471,7 +502,7 @@
       display: grid;
       place-items: center;
       text-align: center;
-      background: rgba(255,255,255,0.7);
+      background: rgba(255,255,255,0.58);
       border: 1px solid var(--line);
       border-radius: 20px;
       padding: 18px;
@@ -504,7 +535,7 @@
       padding: 14px 16px;
       border-radius: 16px;
       border: 1px solid var(--line);
-      background: rgba(255,255,255,0.8);
+      background: rgba(255,255,255,0.7);
     }
 
     .quiz-actions {
@@ -531,7 +562,7 @@
       padding: 20px 12px;
       border: 1px dashed var(--line);
       border-radius: 18px;
-      background: rgba(255,255,255,0.4);
+      background: rgba(255,255,255,0.32);
     }
 
     @media (max-width: 900px) {
@@ -591,7 +622,7 @@
     }
   </style>
 </head>
-<body>
+<body data-theme="light">
   <div class="app">
     <header class="topbar">
       <div class="brand">
@@ -599,6 +630,7 @@
         <h1>英文單字練習站</h1>
       </div>
       <div class="header-actions">
+        <button class="btn" id="themeToggleBtn" type="button">夜間模式</button>
         <button class="btn" id="importBtn" type="button">匯入</button>
         <input id="importFile" type="file" accept="application/json" hidden />
         <button class="btn primary" id="exportBtn" type="button">匯出</button>
@@ -619,17 +651,22 @@
 
         <section class="panel">
           <h3>新增單字</h3>
-          <div class="input-row">
-            <input id="wordInput" class="input" placeholder="單字（例如：apology）" />
-          </div>
-          <div class="input-row">
-            <textarea id="meaningInput" placeholder="中文意思（可直接貼上搜尋結果）"></textarea>
-          </div>
+          <label class="label-note" for="batchInput">一次新增多個英文單字</label>
+          <textarea id="batchInput" placeholder="一行一個單字；也可寫成：apple | 蘋果"></textarea>
+
+          <label class="label-note" for="wordInput">單字 / 英文</label>
+          <input id="wordInput" class="input" placeholder="例如：apology" />
+
+          <label class="label-note" for="meaningInput">中文意思</label>
+          <textarea id="meaningInput" placeholder="輸入中文意思，若留空可自動透過網路查詢"></textarea>
+
           <div class="input-row">
             <select id="folderSelect"></select>
           </div>
+
           <div class="input-row" style="margin-top: 12px;">
-            <button class="btn primary" id="saveWordBtn" type="button" style="width: 100%;">儲存單字</button>
+            <button class="btn primary" id="lookupMeaningBtn" type="button" style="flex:1;">查詢中文意思</button>
+            <button class="btn primary" id="saveWordBtn" type="button" style="flex:1;">新增單字</button>
           </div>
         </section>
       </aside>
@@ -735,6 +772,7 @@
 
   <script>
     const STORAGE_KEY = 'vocab-english-practice-v1';
+    const THEME_KEY = 'vocab-theme-v1';
 
     const defaultState = {
       folders: [{ id: 'default', name: '未分類' }],
@@ -789,6 +827,16 @@
     function getFolderWords(folderId) {
       if (!folderId || folderId === 'all') return [...state.words];
       return state.words.filter(word => word.folderId === folderId);
+    }
+
+    function applyTheme(themeName) {
+      const theme = themeName === 'dark' ? 'dark' : 'light';
+      document.body.setAttribute('data-theme', theme);
+      localStorage.setItem(THEME_KEY, theme);
+      const button = document.getElementById('themeToggleBtn');
+      if (button) {
+        button.textContent = theme === 'dark' ? '日間模式' : '夜間模式';
+      }
     }
 
     function renderFolderSelect() {
@@ -950,36 +998,185 @@
       editingWordId = null;
       document.getElementById('wordInput').value = '';
       document.getElementById('meaningInput').value = '';
-      document.getElementById('saveWordBtn').textContent = '儲存單字';
+      document.getElementById('batchInput').value = '';
+      document.getElementById('saveWordBtn').textContent = '新增單字';
       if (state.folders.length) {
         document.getElementById('folderSelect').value = state.selectedFolderId;
       }
     }
 
-    function saveWord() {
-      const word = document.getElementById('wordInput').value.trim();
-      const meaning = document.getElementById('meaningInput').value.trim();
-      const folderId = document.getElementById('folderSelect').value;
+    function parseWordEntries(text) {
+      const lines = text.split(/\n|,|；|;|\r\n/).map(s => s.trim()).filter(Boolean);
+      const entries = [];
 
-      if (!word || !meaning || !folderId) {
-        alert('請輸入單字、中文意思與資料夾');
+      lines.forEach((line) => {
+        let word = '';
+        let meaning = '';
+
+        const delimiterMatch = line.match(/^(.*?)(?:\s*[:：|]\s*|\s+\|\s+|\s{2,})(.*)$/);
+        if (delimiterMatch) {
+          word = delimiterMatch[1].trim();
+          meaning = delimiterMatch[2].trim();
+        } else {
+          word = line.trim();
+        }
+
+        if (word) {
+          entries.push({ word, meaning });
+        }
+      });
+
+      return entries;
+    }
+
+    async function lookupWordMeaning(word) {
+      const term = word.trim();
+      if (!term) return '';
+
+      try {
+        const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(term)}`);
+        if (!res.ok) throw new Error('lookup failed');
+        const data = await res.json();
+        const entry = Array.isArray(data) ? data[0] : null;
+        const meanings = entry?.meanings || [];
+
+        let definition = '';
+        for (const meaning of meanings) {
+          const firstDef = meaning?.definitions?.[0]?.definition;
+          if (firstDef) {
+            definition = firstDef;
+            break;
+          }
+        }
+
+        if (!definition) return '';
+
+        try {
+          const translateRes = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(definition)}&langpair=en|zh-TW`);
+          const translateData = await translateRes.json();
+          const translatedText = translateData?.responseData?.translatedText;
+          if (translatedText && translatedText.trim()) return translatedText.trim();
+        } catch (error) {
+          // ignore translation failure and fall back to English definition
+        }
+
+        return definition;
+      } catch (error) {
+        return '';
+      }
+    }
+
+    async function lookupSelectedMeaning() {
+      const text = document.getElementById('wordInput').value.trim();
+      const batchText = document.getElementById('batchInput').value.trim();
+      const targetText = text || batchText;
+      if (!targetText) {
+        alert('請先輸入單字或批次清單');
         return;
       }
 
-      if (editingWordId) {
-        const item = state.words.find(entry => entry.id === editingWordId);
-        if (item) {
-          item.word = word;
-          item.meaning = meaning;
-          item.folderId = folderId;
-        }
+      const entries = parseWordEntries(targetText);
+      const oneWord = entries[0]?.word || targetText;
+      const meaning = await lookupWordMeaning(oneWord);
+
+      if (!meaning) {
+        alert('查詢失敗，請確認單字拼法，或手動輸入中文意思');
+        return;
+      }
+
+      if (entries.length > 1) {
+        document.getElementById('batchInput').value = entries.map(entry => {
+          if (entry.meaning) return `${entry.word} | ${entry.meaning}`;
+          return `${entry.word}`;
+        }).join('\n');
+      }
+
+      if (text) {
+        document.getElementById('meaningInput').value = meaning;
       } else {
-        state.words.push({ id: uid(), word, meaning, folderId });
+        document.getElementById('meaningInput').value = entries.map(entry => `${entry.word} | ${entry.meaning || meaning}`).join('\n');
+      }
+    }
+
+    function saveWord() {
+      const wordText = document.getElementById('wordInput').value.trim();
+      const batchText = document.getElementById('batchInput').value.trim();
+      const folderId = document.getElementById('folderSelect').value;
+      const directMeaning = document.getElementById('meaningInput').value.trim();
+
+      if (!folderId) {
+        alert('請先選擇資料夾');
+        return;
+      }
+
+      const entries = parseWordEntries(batchText || wordText || '');
+      if (!entries.length && wordText) {
+        entries.push({ word: wordText, meaning: directMeaning });
+      }
+      if (!entries.length) {
+        alert('請輸入單字內容');
+        return;
+      }
+
+      const normalizedEntries = entries.map((entry) => ({
+        word: entry.word.trim(),
+        meaning: (entry.meaning || directMeaning || '').trim()
+      })).filter(item => item.word);
+
+      if (!normalizedEntries.length) {
+        alert('請輸入有效單字');
+        return;
+      }
+
+      let insertedCount = 0;
+      normalizedEntries.forEach((entry) => {
+        if (editingWordId) {
+          const item = state.words.find(word => word.id === editingWordId);
+          if (!item) return;
+          item.word = entry.word;
+          item.meaning = entry.meaning || item.meaning;
+          item.folderId = folderId;
+          insertedCount += 1;
+          return;
+        }
+
+        const existing = state.words.find(word => word.word.toLowerCase() === entry.word.toLowerCase() && word.folderId === folderId);
+        if (existing) {
+          if (entry.meaning) existing.meaning = entry.meaning;
+          return;
+        }
+
+        state.words.push({ id: uid(), word: entry.word, meaning: entry.meaning || '待補充', folderId });
+        insertedCount += 1;
+      });
+
+      if (editingWordId) {
+        editingWordId = null;
       }
 
       saveState();
       resetWordForm();
       renderAll();
+      toast('已新增 ' + insertedCount + ' 個單字');
+    }
+
+    function toast(message) {
+      const previous = document.getElementById('toastBox');
+      if (previous) previous.remove();
+      const item = document.createElement('div');
+      item.id = 'toastBox';
+      item.textContent = message;
+      item.style.position = 'fixed';
+      item.style.right = '20px';
+      item.style.bottom = '20px';
+      item.style.zIndex = '9999';
+      item.style.padding = '10px 14px';
+      item.style.borderRadius = '999px';
+      item.style.background = 'rgba(31, 25, 17, 0.75)';
+      item.style.color = '#fff';
+      item.style.fontWeight = '700';
+      document.body.appendChild(item);
+      setTimeout(() => item.remove(), 1800);
     }
 
     function getSelectedPracticeFolders() {
@@ -1016,15 +1213,6 @@
 
     function normalizeAnswer(value) {
       return String(value).trim().toLowerCase();
-    }
-
-    function isCorrectAnswer(question, answer) {
-      const target = normalizeAnswer(question.word);
-      const user = normalizeAnswer(answer);
-      if (question.mode === 'flashcard') {
-        return normalizeAnswer(question.meaning) === normalizeAnswer(answer);
-      }
-      return user === target;
     }
 
     function buildQuestionSet() {
@@ -1158,8 +1346,16 @@
       result.textContent = `正確答案：${q.answerText}`;
     }
 
+    document.getElementById('themeToggleBtn').addEventListener('click', () => {
+      const nextTheme = document.body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      applyTheme(nextTheme);
+    });
+
     document.getElementById('addFolderBtn').addEventListener('click', addFolder);
     document.getElementById('saveWordBtn').addEventListener('click', saveWord);
+    document.getElementById('lookupMeaningBtn').addEventListener('click', async () => {
+      await lookupSelectedMeaning();
+    });
     document.getElementById('startPracticeBtn').addEventListener('click', startPractice);
     document.getElementById('submitAnswerBtn').addEventListener('click', checkCurrentAnswer);
     document.getElementById('nextBtn').addEventListener('click', nextQuestion);
@@ -1221,6 +1417,7 @@
       }
     });
 
+    applyTheme(localStorage.getItem(THEME_KEY) || 'light');
     renderAll();
     resetWordForm();
   </script>
