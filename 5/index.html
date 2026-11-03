@@ -1004,7 +1004,6 @@
     window.addEventListener('resize', () => {
       setCanvasSize();
       updateHUD();
-      updateMobileControlsVisibility();
       tryLockLandscape();
     });
 
@@ -1013,7 +1012,6 @@
       updateKeyButtons();
       updateHUD();
       updateMusicButton();
-      updateMobileControlsVisibility();
       showOverlay('開始遊戲', '避開障礙物，衝到更高分！', '開始遊戲', '再來一次', false);
       state.phase = 'menu';
       tryLockLandscape();
