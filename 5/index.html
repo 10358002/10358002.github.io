@@ -1061,10 +1061,22 @@
       });
     });
 
+    leftBtn.addEventListener('contextmenu', (event) => event.preventDefault());
+    rightBtn.addEventListener('contextmenu', (event) => event.preventDefault());
     bindMobileButton(leftBtn, 'left');
     bindMobileButton(rightBtn, 'right');
 
-    window.addEventListener('resize', () => {
+    pauseBtn.addEventListener('click', () => {
+      if (state.phase === 'playing') {
+        pauseGame();
+      } else if (state.phase === 'paused') {
+        resumeGame();
+      } else {
+        startGame();
+      }
+    });
+
+    document.addEventListener('resize', () => {
       setCanvasSize();
       updateHUD();
       tryLockLandscape();
