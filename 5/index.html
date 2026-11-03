@@ -254,6 +254,10 @@
         <span>跳躍</span>
         <button type="button" data-action="jump">W</button>
       </div>
+      <div class="key-row">
+        <span>背景音樂</span>
+        <button type="button" id="musicToggleBtn">開</button>
+      </div>
       <div class="note">點擊按鍵後，直接按要設定的鍵即可完成重新綁定。</div>
     </div>
 
@@ -280,6 +284,7 @@
 
     const BEST_KEY = 'fullScreenRunnerBest';
     const KEY_MAP_KEY = 'fullScreenRunnerKeyMap';
+    const MUSIC_KEY = 'fullScreenRunnerMusic';
 
     const defaultKeyMap = { left: 'KeyA', right: 'KeyD', jump: 'KeyW' };
     const storage = window.localStorage;
@@ -290,8 +295,41 @@
     let lastTime = 0;
     let audioCtx = null;
     let musicTimer = null;
-    let musicEnabled = true;
+    let musicEnabled = getMusicSetting();
     const mozartPhrase = [392.0, 523.25, 659.25, 523.25, 392.0, 329.63, 392.0, 523.25, 659.25, 783.99, 659.25, 523.25, 440.0, 392.0, 440.0, 523.25];
+
+    function getMusicSetting() {
+      try {
+        const raw = storage.getItem(MUSIC_KEY);
+        return raw === null ? true : raw === '1';
+      } catch {
+        return true;
+      }
+    }
+
+    function saveMusicSetting() {
+      storage.setItem(MUSIC_KEY, musicEnabled ? '1' : '0');
+    }
+
+    function updateMusicButton() {
+      if (!musicToggleBtn) return;
+      musicToggleBtn.textContent = musicEnabled ? '開' : '關';
+      musicToggleBtn.style.background = musicEnabled ? 'linear-gradient(180deg, #7ec9ff, #4ea3fa)' : 'linear-gradient(180deg, #d9dee8, #a8afb9)';
+      musicToggleBtn.style.color = musicEnabled ? '#021425' : '#24313e';
+    }
+
+    function setMusicEnabled(enabled) {
+      musicEnabled = Boolean(enabled);
+      saveMusicSetting();
+      updateMusicButton();
+      if (!musicEnabled) {
+        stopMusic();
+        toast.textContent = '背景音樂已關閉';
+      } else if (state.phase === 'playing') {
+        startMusic();
+        toast.textContent = '背景音樂已開啟';
+      }
+    }
 
     function tryLockLandscape() {
       if (window.matchMedia('(orientation: portrait)').matches && screen && screen.orientation && typeof screen.orientation.lock === 'function') {
@@ -373,22 +411,22 @@
     function playSfx(name) {
       switch (name) {
         case 'jump':
-          playTone({ frequency: 320, duration: 0.11, type: 'square', gain: 0.04, slideTo: 500 });
+          playTone({ frequency: 420, duration: 0.12, type: 'square', gain: 0.12, slideTo: 620 });
           break;
         case 'hit':
-          playTone({ frequency: 180, duration: 0.22, type: 'sawtooth', gain: 0.07, slideTo: 70 });
+          playTone({ frequency: 180, duration: 0.22, type: 'sawtooth', gain: 0.18, slideTo: 70 });
           break;
         case 'start':
-          playTone({ frequency: 420, duration: 0.15, type: 'triangle', gain: 0.05, slideTo: 560 });
-          setTimeout(() => playTone({ frequency: 560, duration: 0.15, type: 'triangle', gain: 0.05, slideTo: 700 }), 80);
+          playTone({ frequency: 440, duration: 0.18, type: 'triangle', gain: 0.12, slideTo: 620 });
+          setTimeout(() => playTone({ frequency: 620, duration: 0.18, type: 'triangle', gain: 0.12, slideTo: 780 }), 80);
           break;
         case 'gameover':
-          playTone({ frequency: 220, duration: 0.2, type: 'sawtooth', gain: 0.06, slideTo: 120 });
-          setTimeout(() => playTone({ frequency: 160, duration: 0.28, type: 'triangle', gain: 0.06, slideTo: 75 }), 100);
+          playTone({ frequency: 220, duration: 0.2, type: 'sawtooth', gain: 0.16, slideTo: 120 });
+          setTimeout(() => playTone({ frequency: 160, duration: 0.3, type: 'triangle', gain: 0.16, slideTo: 75 }), 100);
           break;
         case 'bonus':
-          playTone({ frequency: 660, duration: 0.14, type: 'triangle', gain: 0.05, slideTo: 820 });
-          setTimeout(() => playTone({ frequency: 820, duration: 0.12, type: 'triangle', gain: 0.05, slideTo: 980 }), 60);
+          playTone({ frequency: 660, duration: 0.14, type: 'triangle', gain: 0.14, slideTo: 820 });
+          setTimeout(() => playTone({ frequency: 820, duration: 0.12, type: 'triangle', gain: 0.14, slideTo: 980 }), 60);
           break;
         default:
           break;
@@ -397,17 +435,17 @@
 
     function startMusic() {
       const context = ensureAudio();
-      if (!context || musicTimer || state.phase !== 'playing') return;
-      const melody = [261.63, 329.63, 392, 329.63, 293.66, 349.23, 392, 440];
+      if (!context || !musicEnabled || musicTimer || state.phase !== 'playing') return;
+      const phrase = mozartPhrase;
       musicTimer = setInterval(() => {
-        if (state.phase !== 'playing') {
+        if (!musicEnabled || state.phase !== 'playing') {
           stopMusic();
           return;
         }
-        const note = melody[state.musicStep % melody.length];
-        playTone({ frequency: note, duration: 0.16, type: 'triangle', gain: 0.018, slideTo: note * 1.03 });
+        const note = phrase[state.musicStep % phrase.length];
+        playTone({ frequency: note, duration: 0.18, type: 'triangle', gain: 0.04, slideTo: note * 1.02 });
         state.musicStep += 1;
-      }, 250);
+      }, 240);
     }
 
     function stopMusic() {
@@ -513,7 +551,7 @@
       hideOverlay();
       toast.textContent = '觸碰螢幕可跳躍，電腦請用自訂鍵盤操控';
       playSfx('start');
-      startMusic();
+      if (musicEnabled) startMusic();
       lastTime = performance.now();
       tryLockLandscape();
       tryEnterFullscreen();
@@ -536,7 +574,7 @@
       state.phase = 'playing';
       hideOverlay();
       toast.textContent = '繼續遊戲';
-      startMusic();
+      if (musicEnabled) startMusic();
       tryLockLandscape();
       tryEnterFullscreen();
     }
@@ -930,6 +968,10 @@
       startGame();
     });
 
+    musicToggleBtn.addEventListener('click', () => {
+      setMusicEnabled(!musicEnabled);
+    });
+
     configButton.addEventListener('click', () => {
       keyPanel.classList.toggle('open');
     });
@@ -975,6 +1017,7 @@
       setCanvasSize();
       updateKeyButtons();
       updateHUD();
+      updateMusicButton();
       showOverlay('開始遊戲', '避開障礙物，衝到更高分！', '開始遊戲', '再來一次', false);
       state.phase = 'menu';
       tryLockLandscape();
