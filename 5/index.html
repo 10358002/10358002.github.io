@@ -694,6 +694,17 @@
       });
     }
 
+    function processDesktopInput(dt) {
+      const moveAxis = (input.right ? 1 : 0) - (input.left ? 1 : 0);
+      const maxX = (canvas.width / (window.devicePixelRatio || 1)) - 80;
+      player.x += moveAxis * player.moveSpeed * (dt / 1000);
+      player.x = Math.max(30, Math.min(maxX, player.x));
+
+      if (input.jump && player.grounded) {
+        triggerJump();
+      }
+    }
+
     function update(dt) {
       if (state.phase !== 'playing') return;
 
@@ -989,16 +1000,6 @@
         toast.textContent = `請按下要綁定的鍵（${action}）`;
         keyPanel.classList.add('open');
       });
-    });
-
-    pauseBtn.addEventListener('click', () => {
-      if (state.phase === 'playing') {
-        pauseGame();
-      } else if (state.phase === 'paused') {
-        resumeGame();
-      } else {
-        startGame();
-      }
     });
 
     window.addEventListener('resize', () => {
