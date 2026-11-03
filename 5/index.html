@@ -328,16 +328,20 @@
     }
 
     function tryLockLandscape() {
-      if (window.matchMedia('(orientation: portrait)').matches && screen && screen.orientation && typeof screen.orientation.lock === 'function') {
-        screen.orientation.lock('landscape').catch(() => {});
-      }
+      if (!screen || !screen.orientation || typeof screen.orientation.lock !== 'function') return;
+      if (window.innerHeight <= window.innerWidth) return;
+      screen.orientation.lock('landscape').catch(() => {});
     }
 
     function tryEnterFullscreen() {
       const root = document.documentElement;
       const fs = root.requestFullscreen || root.webkitRequestFullscreen || root.mozRequestFullScreen || root.msRequestFullscreen;
-      if (fs && !document.fullscreenElement && !document.webkitFullscreenElement) {
+      const alreadyFullscreen = !!(document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement);
+      if (!fs || alreadyFullscreen) return;
+      try {
         fs.call(root).catch(() => {});
+      } catch (error) {
+        // ignore fullscreen request failures from browsers that block this call
       }
     }
 
