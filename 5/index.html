@@ -206,84 +206,6 @@
       padding: 20px;
     }
 
-    .overlay {
-      position: absolute;
-      inset: 0;
-      z-index: 30;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: rgba(5, 13, 20, 0.42);
-      backdrop-filter: blur(2px);
-    }
-
-    .overlay.hidden {
-      display: none;
-    }
-
-    .menu-panel {
-      width: min(440px, 82vw);
-      padding: 30px 22px 20px;
-      border-radius: 22px;
-      background: rgba(12, 22, 34, 0.82);
-      border: 1px solid rgba(255,255,255,0.18);
-      text-align: center;
-      box-shadow: 0 18px 28px rgba(0,0,0,0.24);
-    }
-
-    .menu-panel h2 {
-      margin: 0 0 12px;
-      font-size: clamp(1.8rem, 4vw, 2.6rem);
-      letter-spacing: 0.08em;
-    }
-
-    .menu-panel p {
-      margin: 0 0 18px;
-      color: rgba(255,255,255,0.84);
-      line-height: 1.7;
-      font-weight: 600;
-    }
-
-    .menu-buttons {
-      display: flex;
-      justify-content: center;
-      flex-wrap: wrap;
-      gap: 12px;
-    }
-
-    .action-btn {
-      border: 0;
-      border-radius: 12px;
-      padding: 12px 18px;
-      font-size: 1rem;
-      font-weight: 800;
-      letter-spacing: 0.06em;
-      cursor: pointer;
-      color: white;
-      background: linear-gradient(180deg, #3a9bf5, #267be0);
-      box-shadow: 0 10px 18px rgba(0,0,0,0.18);
-    }
-
-    .action-btn.secondary {
-      background: linear-gradient(180deg, #ffb052, #f38d2e);
-    }
-
-    .pause-btn {
-      position: absolute;
-      right: 16px;
-      top: 84px;
-      z-index: 12;
-      width: 42px;
-      height: 42px;
-      border: 0;
-      border-radius: 12px;
-      background: rgba(9, 18, 29, 0.68);
-      color: white;
-      font-size: 1.2rem;
-      font-weight: 900;
-      cursor: pointer;
-    }
-
     @media (orientation: portrait) {
       .rotate-tip {
         display: flex;
@@ -367,6 +289,16 @@
     let lastTime = 0;
     let audioCtx = null;
     let musicTimer = null;
+
+    function tryLockLandscape() {
+      if (window.matchMedia('(orientation: portrait)').matches && screen && screen.orientation && typeof screen.orientation.lock === 'function') {
+        screen.orientation.lock('landscape').catch(() => {});
+      }
+    }
+
+    function isPortraitMode() {
+      return window.innerHeight > window.innerWidth;
+    }
 
     const state = {
       phase: 'menu',
@@ -542,7 +474,7 @@
       particles.length = 0;
       state.time = 0;
       state.score = 0;
-      state.spawnTimer = 1500;
+      state.spawnTimer = 700;
       state.hitFlash = 0;
       state.worldSpeed = 260;
       state.musicStep = 0;
@@ -559,6 +491,10 @@
     }
 
     function startGame() {
+      if (isPortraitMode()) {
+        toast.textContent = '請將手機轉成橫向再開始';
+        return;
+      }
       ensureAudio();
       stopMusic();
       resetGamePlayState();
@@ -568,6 +504,7 @@
       playSfx('start');
       startMusic();
       lastTime = performance.now();
+      tryLockLandscape();
     }
 
     function pauseGame() {
@@ -580,6 +517,10 @@
 
     function resumeGame() {
       if (state.phase !== 'paused') return;
+      if (isPortraitMode()) {
+        toast.textContent = '請轉成橫向再繼續';
+        return;
+      }
       state.phase = 'playing';
       hideOverlay();
       toast.textContent = '繼續遊戲';
@@ -719,6 +660,11 @@
 
     function update(dt) {
       if (state.phase !== 'playing') return;
+
+      if (isPortraitMode()) {
+        toast.textContent = '請將手機轉成橫向';
+        return;
+      }
 
       state.time += dt;
       state.score = Math.floor(state.time / 180);
@@ -942,6 +888,7 @@
       if (code === 'KeyR') {
         startGame();
       }
+      tryLockLandscape();
     });
 
     document.addEventListener('keyup', (event) => {
@@ -955,6 +902,7 @@
     canvas.addEventListener('pointerdown', (event) => {
       event.preventDefault();
       ensureAudio();
+      tryLockLandscape();
       if (state.phase === 'playing') {
         triggerJump();
         return;
@@ -1004,6 +952,7 @@
     window.addEventListener('resize', () => {
       setCanvasSize();
       updateHUD();
+      tryLockLandscape();
     });
 
     function start() {
@@ -1012,6 +961,7 @@
       updateHUD();
       showOverlay('開始遊戲', '避開障礙物，衝到更高分！', '開始遊戲', '再來一次', false);
       state.phase = 'menu';
+      tryLockLandscape();
       requestAnimationFrame(gameLoop);
     }
 
