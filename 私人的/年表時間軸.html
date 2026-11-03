@@ -70,14 +70,11 @@ button,input,textarea{font-family:inherit;font-size:inherit;color:inherit}
 .minor .chip{font-size:.78rem;padding:0 9px 0 7px}
 .chip i{width:8px;height:8px;border-radius:50%;background:var(--c);flex:none}
 .chip b{font-weight:400;color:var(--muted)}
-.acts{position:absolute;top:8px;right:10px;display:flex;gap:2px;opacity:0;transition:opacity .2s}
-.minor .acts{top:-4px}
-.ev:hover .acts,.acts:focus-within{opacity:1}
-@media (hover:none){.acts{opacity:.7}}
-.ibtn{border:0;background:transparent;color:var(--muted);cursor:pointer;padding:2px 7px;border-radius:6px;font-size:.82rem}
-.ibtn:hover{color:var(--accent)}
-.ibtn.del:hover{color:#b5523b}
-.empty{text-align:center;color:var(--muted);padding:70px 0}
+.region-tag,.year-sub,.year-mini{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:999px;padding:1px 8px;margin-left:8px;font-size:.72rem;color:var(--muted);background:rgba(138,106,59,.04)}
+.meta{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:6px}
+.year-sub,.year-mini{margin-left:0}
+.major .year-mini{display:none}
+.minor .year-sub{display:none}
 
 /* dialogs */
 dialog{background:var(--panel);color:var(--ink);border:1px solid var(--line);border-radius:16px;padding:0;width:min(520px,calc(100vw - 28px));box-shadow:0 20px 60px rgba(0,0,0,.25);max-height:90vh}
@@ -126,10 +123,12 @@ input[type=color].in{padding:2px;height:38px;cursor:pointer}
 <body>
 <div class="wrap">
   <header class="top">
-    <input id="titleInput" class="title" maxlength="40" aria-label="時間軸標題" placeholder="時間軸標題">
+    <input id="titleInput" class="title" maxlength="40" aria-label="時間軸標題" placeholder="記事年表">
     <div class="row">
       <button class="btn" id="themeBtn"></button>
       <button class="btn" id="charBtn">人物</button>
+      <button class="btn" id="regionBtn">地區</button>
+      <button class="btn" id="familyBtn">家族</button>
       <button class="btn primary" id="addBtn">＋ 新增事件</button>
     </div>
   </header>
@@ -157,6 +156,7 @@ input[type=color].in{padding:2px;height:38px;cursor:pointer}
     </div>
     <label class="f"><span>年份（西元前請填負數，如 -221）</span><input class="in" id="evYear" type="number" step="1" required></label>
     <label class="f"><span>標題</span><input class="in" id="evTitle" maxlength="60" required></label>
+    <label class="f"><span>地區</span><select class="in" id="evRegion"></select></label>
     <label class="f"><span>說明（選填）</span><textarea class="in" id="evDesc" maxlength="600"></textarea></label>
     <div class="f"><span>相關人物（可複選，年齡依年份自動計算）</span><div class="picks" id="evChars"></div></div>
     <div class="foot">
@@ -173,6 +173,10 @@ input[type=color].in{padding:2px;height:38px;cursor:pointer}
     <ul class="clist" id="clist"></ul>
     <form class="cform" id="chForm">
       <label class="f"><span id="chFormHead">新增人物</span><input class="in" id="chName" maxlength="20" placeholder="姓名" required></label>
+      <div class="two">
+        <label class="f"><span>地區</span><select class="in" id="chRegion"></select></label>
+        <label class="f"><span>家族</span><select class="in" id="chFamily"></select></label>
+      </div>
       <div class="three">
         <label class="f"><span>出生年</span><input class="in" id="chBirth" type="number" step="1" required></label>
         <label class="f"><span>逝世年（選填）</span><input class="in" id="chDeath" type="number" step="1"></label>
@@ -183,6 +187,22 @@ input[type=color].in{padding:2px;height:38px;cursor:pointer}
         <button type="submit" class="btn small primary" id="chSubmit">加入</button>
       </div>
     </form>
+
+    <div class="cform" style="margin-top:16px">
+      <div class="two">
+        <div>
+          <label class="f"><span>新增地區</span><input class="in" id="regionInput" placeholder="例如：中國"></label>
+          <div class="foot" style="margin:0 0 4px"><button type="button" class="btn small primary" id="addRegionBtn">新增地區</button></div>
+          <ul class="clist" id="regionList"></ul>
+        </div>
+        <div>
+          <label class="f"><span>新增家族</span><input class="in" id="familyInput" placeholder="例如：王氏"></label>
+          <div class="foot" style="margin:0 0 4px"><button type="button" class="btn small primary" id="addFamilyBtn">新增家族</button></div>
+          <ul class="clist" id="familyList"></ul>
+        </div>
+      </div>
+    </div>
+
     <div class="foot"><button class="btn" id="chDone" type="button">完成</button></div>
   </div>
 </dialog>
@@ -286,13 +306,19 @@ function render() {
     e.chars.map(charById).filter(Boolean).forEach(c =>
       chips.append(el('span', { class: 'chip', style: `--c:${c.color}` }, el('i'), c.name, el('b', {}, '· ' + ageText(c, e.year))))
     );
+    const meta = el('div', { class: 'meta' },
+      e.region ? el('span', { class: 'region-tag' }, e.region) : '',
+      e.family ? el('span', { class: 'region-tag' }, e.family) : '',
+      el('span', { class: 'year-sub' }, fmtYear(e.year))
+    );
     const card = el('div', { class: 'card' },
       el('div', { class: 'acts' },
         el('button', { class: 'ibtn', title: '編輯', onclick: () => openEvent(e.id) }, '編輯'),
         el('button', { class: 'ibtn del', title: '刪除', onclick: () => delEvent(e.id) }, '刪除')),
       el('h3', {}, e.title),
       e.desc ? el('p', {}, e.desc) : '',
-      e.chars.length ? chips : '');
+      e.chars.length ? chips : '',
+      meta);
     tl.append(el('article', { class: 'ev ' + e.type },
       el('div', { class: 'yr' }, fmtYear(e.year)),
       el('div', { class: 'dotw' }, el('div', { class: 'dot' })),
@@ -321,6 +347,13 @@ function openEvent(id) {
     cb.checked = e ? e.chars.includes(c.id) : false;
     box.append(el('label', { class: 'pick', style: `--c:${c.color}` }, cb, el('span', {}, c.name)));
   });
+  const regionSel = $('#evRegion');
+  regionSel.replaceChildren(el('option', { value: '' }, '無'));
+  state.characters.forEach(c => {
+    if (c.region && !regionSel.querySelector(`option[value="${c.region}"]`))
+      regionSel.append(el('option', { value: c.region }, c.region));
+  });
+  regionSel.value = e ? e.region : '';
   evDlg.showModal();
 }
 $('#addBtn').onclick = () => openEvent();
@@ -334,7 +367,8 @@ $('#evForm').addEventListener('submit', ev => {
     year, title,
     desc: $('#evDesc').value.trim(),
     type: document.querySelector('input[name=etype]:checked').value,
-    chars: [...$('#evChars').querySelectorAll('input:checked')].map(i => i.value)
+    chars: [...$('#evChars').querySelectorAll('input:checked')].map(i => i.value),
+    region: $('#evRegion').value
   };
   if (editingId) Object.assign(state.events.find(x => x.id === editingId), data);
   else state.events.push({ id: uid(), ...data });
