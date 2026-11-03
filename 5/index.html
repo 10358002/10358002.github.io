@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
+  <title>全螢幕閃避跑者</title>
+  <style>
+    :root {
+      --bg-top: #dff6ff;
+      --bg-mid: #7ec9ff;
+      --bg-bottom: #1f4f7a;
+      --panel: rgba(8, 16, 28, 0.46);
+      --panel-strong: rgba(8, 16, 28, 0.72);
+      --hud: #f8fbff;
+      --accent: #ffd84d;
+      --accent-2: #ff9b42;
+      --danger: #ff5a5a;
+      --grass: #3e8d4d;
+      --grass-dark: #255733;
+      --line: rgba(255,255,255,0.28);
+      --shadow: rgba(0, 0, 0, 0.2);
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: linear-gradient(180deg, var(--bg-top), var(--bg-mid) 32%, var(--bg-bottom));
+      font-family: "Segoe UI", "Microsoft JhengHei", sans-serif;
+      color: white;
+    }
+
+    body {
+      position: relative;
+      touch-action: none;
+      overscroll-behavior: none;
+    }
+
+    #gameWrap {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      background: linear-gradient(180deg, rgba(255,255,255,0.13), rgba(0,0,0,0.08));
+    }
+
+    .hud {
+      position: absolute;
+      top: 12px;
+      left: 16px;
+      right: 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      z-index: 10;
+      padding: 10px 16px;
+      border-radius: 18px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+      backdrop-filter: blur(6px);
+    }
+
+    .title {
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      color: var(--hud);
+      font-size: clamp(1rem, 1.8vw, 1.5rem);
+      text-shadow: 0 2px 0 rgba(0, 0, 0, 0.2);
+    }
+
+    .stats {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 8px 14px;
+      font-weight: 700;
+      font-size: clamp(0.82rem, 1.5vw, 1.05rem);
+      color: #f5fbff;
+    }
+
+    canvas {
+      display: block;
+      width: 100vw;
+      height: calc(100vh - 8px);
+      background: linear-gradient(180deg, #bfe8ff 0%, #90d3ff 35%, #6eaee6 36%, #306c94 100%);
+      touch-action: none;
+    }
+
+    .toast {
+      position: absolute;
+      left: 50%;
+      bottom: 14px;
+      transform: translateX(-50%);
+      min-width: min(80vw, 520px);
+      padding: 10px 16px;
+      border-radius: 14px;
+      background: rgba(12, 22, 35, 0.58);
+      border: 1px solid rgba(255,255,255,0.2);
+      color: #f9fdff;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-align: center;
+      z-index: 8;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+      font-size: clamp(0.8rem, 1.6vw, 1rem);
+    }
+
+    .config-btn {
+      position: absolute;
+      right: 16px;
+      bottom: 16px;
+      z-index: 9;
+      padding: 10px 14px;
+      border: 0;
+      border-radius: 12px;
+      background: rgba(17, 26, 36, 0.7);
+      color: white;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      box-shadow: 0 8px 18px rgba(0,0,0,0.18);
+      cursor: pointer;
+    }
+
+    .key-panel {
+      position: absolute;
+      right: 16px;
+      top: 74px;
+      width: min(280px, 72vw);
+      background: var(--panel-strong);
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 18px;
+      padding: 12px 12px 8px;
+      display: none;
+      z-index: 12;
+      box-shadow: 0 16px 30px rgba(0,0,0,0.2);
+    }
+
+    .key-panel.open {
+      display: block;
+    }
+
+    .key-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 8px;
+      min-height: 42px;
+      padding: 4px 4px;
+      border-radius: 10px;
+      background: rgba(255,255,255,0.04);
+    }
+
+    .key-row span {
+      font-weight: 700;
+      letter-spacing: 0.04em;
+    }
+
+    .key-row button {
+      min-width: 100px;
+      padding: 8px 10px;
+      border: 0;
+      border-radius: 10px;
+      background: linear-gradient(180deg, #7ec9ff, #4ea3fa);
+      color: #021425;
+      font-weight: 900;
+      letter-spacing: 0.08em;
+      cursor: pointer;
+    }
+
+    .note {
+      font-size: 0.74rem;
+      color: rgba(255,255,255,0.8);
+      line-height: 1.6;
+      margin-top: 8px;
+      text-align: center;
+    }
+
+    .rotate-tip {
+      position: absolute;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      z-index: 20;
+      background: rgba(15, 24, 35, 0.7);
+      color: white;
+      font-size: clamp(1.2rem, 4vw, 2rem);
+      font-weight: 900;
+      letter-spacing: 0.12em;
+      padding: 20px;
+    }
+
+    @media (orientation: portrait) {
+      .rotate-tip {
+        display: flex;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="gameWrap">
+    <div class="hud">
+      <div class="title">全螢幕閃避跑者</div>
+      <div class="stats">
+        <div>時間：<span id="timeValue">0.0s</span></div>
+        <div>分數：<span id="scoreValue">0</span></div>
+        <div>最高：<span id="bestValue">0</span></div>
+      </div>
+    </div>
+
+    <canvas id="gameCanvas"></canvas>
+    <div id="toast" class="toast">觸碰螢幕可跳躍，電腦請用自訂鍵盤操控</div>
+    <button id="configButton" class="config-btn" type="button">鍵盤設定</button>
+
+    <div id="keyPanel" class="key-panel" aria-label="鍵盤設定">
+      <div class="key-row">
+        <span>左移</span>
+        <button type="button" data-action="left">A</button>
+      </div>
+      <div class="key-row">
+        <span>右移</span>
+        <button type="button" data-action="right">D</button>
+      </div>
+      <div class="key-row">
+        <span>跳躍</span>
+        <button type="button" data-action="jump">W</button>
+      </div>
+      <div class="note">點擊按鍵後，直接按要設定的鍵即可完成重新綁定。</div>
+    </div>
+
+    <div class="rotate-tip">請將裝置轉成橫向<br/>開始遊戲</div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const timeValue = document.getElementById('timeValue');
+    const scoreValue = document.getElementById('scoreValue');
+    const bestValue = document.getElementById('bestValue');
+    const toast = document.getElementById('toast');
+    const configButton = document.getElementById('configButton');
+    const keyPanel = document.getElementById('keyPanel');
+
+    const BEST_KEY = 'fullScreenRunnerBest';
+    const KEY_MAP_KEY = 'fullScreenRunnerKeyMap';
+
+    const defaultKeyMap = { left: 'KeyA', right: 'KeyD', jump: 'KeyW' };
+    const storage = window.localStorage;
+    const keyMap = loadKeyMap();
+    const input = { left: false, right: false, jump: false };
+
+    let waitingForKey = null;
+    let lastTime = 0;
+    let gameStarted = false;
+    let gameOver = false;
+
+    const state = {
+      time: 0,
+      score: 0,
+      best: Number(storage.getItem(BEST_KEY)) || 0,
+      spawnTimer: 0,
+      hitFlash: 0,
+      worldSpeed: 320,
+      groundY: 0,
+      cloudSpeed: 0.4
+    };
+
+    const player = {
+      x: 120,
+      y: 0,
+      w: 34,
+      h: 62,
+      vy: 0,
+      grounded: true,
+      jumpForce: 760,
+      moveSpeed: 360,
+      hue: '#ff6b57'
+    };
+
+    const obstacles = [];
+    const particles = [];
+
+    function loadKeyMap() {
+      try {
+        const raw = storage.getItem(KEY_MAP_KEY);
+        if (!raw) return { ...defaultKeyMap };
+        const parsed = JSON.parse(raw);
+        return {
+          left: parsed.left || defaultKeyMap.left,
+          right: parsed.right || defaultKeyMap.right,
+          jump: parsed.jump || defaultKeyMap.jump
+        };
+      } catch {
+        return { ...defaultKeyMap };
+      }
+    }
+
+    function saveKeyMap() {
+      storage.setItem(KEY_MAP_KEY, JSON.stringify(keyMap));
+    }
+
+    function updateKeyButtons() {
+      document.querySelectorAll('[data-action]').forEach((button) => {
+        const action = button.dataset.action;
+        const code = keyMap[action];
+        button.textContent = code ? formatCode(code) : '未設置';
+      });
+    }
+
+    function formatCode(code) {
+      if (code.startsWith('Key')) return code.slice(3);
+      if (code.startsWith('Arrow')) return code.replace('Arrow', '↑↓←→');
+      return code;
+    }
+
+    function setCanvasSize() {
+      const dpr = window.devicePixelRatio || 1;
+      const width = Math.max(360, window.innerWidth);
+      const height = Math.max(280, window.innerHeight - 4);
+      canvas.width = Math.floor(width * dpr);
+      canvas.height = Math.floor(height * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      state.groundY = height - 52;
+      if (!gameStarted) {
+        player.x = 120;
+      }
+      player.y = state.groundY - player.h;
+      player.grounded = true;
+    }
+
+    function resetGame() {
+      obstacles.length = 0;
+      particles.length = 0;
+      state.time = 0;
+      state.score = 0;
+      state.spawnTimer = 700;
+      state.hitFlash = 0;
+      state.worldSpeed = 320;
+      player.x = 120;
+      player.y = state.groundY - player.h;
+      player.vy = 0;
+      player.grounded = true;
+      gameOver = false;
+      gameStarted = true;
+      toast.textContent = '觸碰螢幕可跳躍，電腦請用自訂鍵盤操控';
+      updateHUD();
+    }
+
+    function updateHUD() {
+      timeValue.textContent = `${(state.time / 1000).toFixed(1)}s`;
+      scoreValue.textContent = String(state.score);
+      bestValue.textContent = String(state.best);
+    }
+
+    function saveBestScore() {
+      if (state.score > state.best) {
+        state.best = state.score;
+        storage.setItem(BEST_KEY, String(state.best));
+      }
+      updateHUD();
+    }
+
+    function spawnParticle(x, y, color, count = 12) {
+      for (let i = 0; i < count; i++) {
+        particles.push({
+          x,
+          y,
+          vx: randomRange(-90, 90),
+          vy: randomRange(-120, 30),
+          life: randomRange(0.3, 0.7),
+          radius: randomRange(2, 6),
+          color
+        });
+      }
+    }
+
+    function randomRange(min, max) {
+      return min + Math.random() * (max - min);
+    }
+
+    function rectOverlap(a, b) {
+      return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+    }
+
+    function pickSpawnType() {
+      const roll = Math.random();
+      return roll < 0.7 ? 'block' : 'float';
+    }
+
+    function spawnObstacle() {
+      const width = randomRange(26, 72);
+      const height = randomRange(18, 78);
+      const type = pickSpawnType();
+
+      if (type === 'block') {
+        obstacles.push({
+          x: canvas.width / (window.devicePixelRatio || 1) + 16,
+          y: state.groundY - height,
+          w: width,
+          h: height,
+          color: '#ba6e55',
+          type: 'block'
+        });
+      } else {
+        const blockH = randomRange(18, 30);
+        const floatY = state.groundY - randomRange(110, 180);
+        obstacles.push({
+          x: canvas.width / (window.devicePixelRatio || 1) + 20,
+          y: floatY,
+          w: width,
+          h: blockH,
+          color: '#f19b48',
+          type: 'float'
+        });
+      }
+    }
+
+    function triggerJump() {
+      if (!gameStarted || gameOver) {
+        resetGame();
+        return;
+      }
+      if (player.grounded) {
+        player.vy = -player.jumpForce;
+        player.grounded = false;
+        spawnParticle(player.x + player.w / 2, player.y + player.h, '#ffe08a', 8);
+      }
+    }
+
+    function handleInput(action, isPressed) {
+      if (action === 'left') input.left = isPressed;
+      if (action === 'right') input.right = isPressed;
+      if (action === 'jump') input.jump = isPressed;
+    }
+
+    function processDesktopInput(dt) {
+      const moveAxis = (input.right ? 1 : 0) - (input.left ? 1 : 0);
+      player.x += moveAxis * player.moveSpeed * (dt / 1000);
+      player.x = Math.max(30, Math.min(canvas.width / (window.devicePixelRatio || 1) - 80, player.x));
+
+      if (input.jump && player.grounded) {
+        triggerJump();
+      }
+    }
+
+    function update(dt) {
+      if (!gameStarted) return;
+      if (gameOver) return;
+
+      state.time += dt;
+      state.score = Math.floor(state.time / 120) + Math.floor(state.time / 1800);
+      state.worldSpeed = 320 + state.score * 2.6 + state.time * 0.012;
+      const intervalBase = Math.max(420, 1300 - state.time * 0.045 - state.score * 0.8);
+      state.spawnTimer -= dt;
+
+      if (state.spawnTimer <= 0) {
+        spawnObstacle();
+        state.spawnTimer = intervalBase + randomRange(80, 180);
+      }
+
+      saveBestScore();
+      updateHUD();
+      processDesktopInput(dt);
+
+      if (!player.grounded) {
+        player.vy += 1750 * (dt / 1000);
+        player.y += player.vy * (dt / 1000);
+      }
+
+      if (player.y + player.h >= state.groundY) {
+        player.y = state.groundY - player.h;
+        player.vy = 0;
+        player.grounded = true;
+      }
+
+      for (let i = obstacles.length - 1; i >= 0; i--) {
+        const obstacle = obstacles[i];
+        obstacle.x -= state.worldSpeed * (dt / 1000);
+
+        if (obstacle.x + obstacle.w < -20) {
+          obstacles.splice(i, 1);
+          continue;
+        }
+
+        const playerBox = { x: player.x + 4, y: player.y + 4, w: player.w - 8, h: player.h - 8 };
+        const obstacleBox = { x: obstacle.x, y: obstacle.y, w: obstacle.w, h: obstacle.h };
+
+        if (rectOverlap(playerBox, obstacleBox)) {
+          gameOver = true;
+          toast.textContent = `遊戲結束！分數：${state.score}，按 R 或點擊螢幕重新開始`;
+          spawnParticle(player.x + player.w / 2, player.y + player.h / 2, '#ff5959', 24);
+          state.hitFlash = 0.8;
+          break;
+        }
+      }
+
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx * (dt / 1000);
+        p.y += p.vy * (dt / 1000);
+        p.life -= dt / 1000;
+        if (p.life <= 0) particles.splice(i, 1);
+      }
+
+      state.hitFlash = Math.max(0, state.hitFlash - dt / 1000);
+    }
+
+    function drawBackground() {
+      const width = canvas.width / (window.devicePixelRatio || 1);
+      const height = canvas.height / (window.devicePixelRatio || 1);
+      const sky = ctx.createLinearGradient(0, 0, 0, height);
+      sky.addColorStop(0, '#dff7ff');
+      sky.addColorStop(0.35, '#98d9fe');
+      sky.addColorStop(0.36, '#6ab7ea');
+      sky.addColorStop(1, '#184b74');
+      ctx.fillStyle = sky;
+      ctx.fillRect(0, 0, width, height);
+
+      const hillOffset = (state.time * 0.05) % 220;
+      ctx.fillStyle = 'rgba(126, 191, 255, 0.2)';
+      for (let i = -1; i < 6; i++) {
+        const baseX = i * 220 - hillOffset;
+        ctx.beginPath();
+        ctx.moveTo(baseX, height);
+        ctx.quadraticCurveTo(baseX + 70, height - 90, baseX + 220, height);
+        ctx.fill();
+      }
+
+      ctx.fillStyle = '#8ad17d';
+      ctx.fillRect(0, state.groundY + 2, width, height - state.groundY);
+      ctx.fillStyle = '#4f9f55';
+      ctx.fillRect(0, state.groundY + 10, width, 10);
+
+      for (let i = 0; i < width + 40; i += 30) {
+        const x = i - ((state.time * 0.06) % 30);
+        ctx.fillStyle = 'rgba(255,255,255,0.2)';
+        ctx.fillRect(x, state.groundY + 16, 18, 8);
+      }
+    }
+
+    function drawPlayer() {
+      const x = player.x;
+      const y = player.y;
+      const body = player.hue;
+
+      ctx.fillStyle = body;
+      ctx.beginPath();
+      ctx.arc(x + player.w / 2, y + 14, 12, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.strokeStyle = body;
+      ctx.lineWidth = 6;
+      ctx.beginPath();
+      ctx.moveTo(x + player.w / 2, y + 26);
+      ctx.lineTo(x + player.w / 2, y + 40);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(x + player.w / 2, y + 32);
+      ctx.lineTo(x + 10, y + 52);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(x + player.w / 2, y + 32);
+      ctx.lineTo(x + player.w - 10, y + 52);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(x + player.w / 2, y + 40);
+      ctx.lineTo(x + 12, y + player.h);
+      ctx.stroke();
+
+      ctx.beginPath();
+      ctx.moveTo(x + player.w / 2, y + 40);
+      ctx.lineTo(x + player.w - 12, y + player.h);
+      ctx.stroke();
+
+      if (state.hitFlash > 0) {
+        ctx.strokeStyle = `rgba(255,255,255,${state.hitFlash})`;
+        ctx.lineWidth = 3;
+        ctx.strokeRect(x - 4, y - 4, player.w + 8, player.h + 8);
+      }
+    }
+
+    function drawObstacles() {
+      for (const obstacle of obstacles) {
+        ctx.fillStyle = obstacle.color;
+        ctx.fillRect(obstacle.x, obstacle.y, obstacle.w, obstacle.h);
+        ctx.fillStyle = 'rgba(255,255,255,0.25)';
+        ctx.fillRect(obstacle.x + 4, obstacle.y + 4, obstacle.w - 8, 6);
+      }
+    }
+
+    function drawParticles() {
+      for (const p of particles) {
+        ctx.fillStyle = p.color + 'aa';
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    function drawScene() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      drawBackground();
+      drawObstacles();
+      drawPlayer();
+      drawParticles();
+    }
+
+    function gameLoop(timestamp) {
+      const dt = Math.min(32, timestamp - lastTime || 16);
+      lastTime = timestamp;
+      update(dt);
+      drawScene();
+      requestAnimationFrame(gameLoop);
+    }
+
+    function handleKeyChange(code, isPressed) {
+      const found = Object.entries(keyMap).find(([, mapped]) => mapped === code);
+      if (found) {
+        const [action] = found;
+        handleInput(action, isPressed);
+      }
+      if (waitingForKey && isPressed) {
+        keyMap[waitingForKey] = code;
+        saveKeyMap();
+        updateKeyButtons();
+        waitingForKey = null;
+        toast.textContent = `已更新 ${waitingForKey ? '' : '按鍵設定'} `;
+        return;
+      }
+    }
+
+    document.addEventListener('keydown', (event) => {
+      const code = event.code;
+      if (Object.values(keyMap).includes(code)) {
+        event.preventDefault();
+      }
+
+      if (waitingForKey) {
+        event.preventDefault();
+        if (code === 'Escape') {
+          waitingForKey = null;
+          toast.textContent = '取消鍵盤設定';
+          return;
+        }
+        if (code !== keyMap.left && code !== keyMap.right && code !== keyMap.jump) {
+          keyMap[waitingForKey] = code;
+          saveKeyMap();
+          updateKeyButtons();
+          waitingForKey = null;
+          toast.textContent = '鍵盤設定已更新';
+          return;
+        }
+      }
+
+      if (code === keyMap.left) handleInput('left', true);
+      if (code === keyMap.right) handleInput('right', true);
+      if (code === keyMap.jump) {
+        handleInput('jump', true);
+        if (player.grounded && !gameOver && gameStarted) {
+          triggerJump();
+        }
+      }
+      if (code === 'KeyR') {
+        resetGame();
+      }
+    });
+
+    document.addEventListener('keyup', (event) => {
+      const code = event.code;
+      if (code === keyMap.left) handleInput('left', false);
+      if (code === keyMap.right) handleInput('right', false);
+      if (code === keyMap.jump) handleInput('jump', false);
+    });
+
+    canvas.addEventListener('pointerdown', (event) => {
+      event.preventDefault();
+      if (window.innerWidth > window.innerHeight) {
+        if (!gameStarted || gameOver) {
+          resetGame();
+          return;
+        }
+        triggerJump();
+      }
+    });
+
+    configButton.addEventListener('click', () => {
+      keyPanel.classList.toggle('open');
+    });
+
+    document.querySelectorAll('[data-action]').forEach((button) => {
+      button.addEventListener('click', () => {
+        const action = button.dataset.action;
+        waitingForKey = action;
+        toast.textContent = `請按下要綁定的鍵（${action}）`;
+        keyPanel.classList.add('open');
+      });
+    });
+
+    window.addEventListener('resize', () => {
+      setCanvasSize();
+      updateHUD();
+    });
+
+    function start() {
+      setCanvasSize();
+      updateKeyButtons();
+      updateHUD();
+      resetGame();
+      requestAnimationFrame(gameLoop);
+    }
+
+    start();
+  </script>
+</body>
+</html>
