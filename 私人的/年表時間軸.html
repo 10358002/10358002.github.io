@@ -140,7 +140,6 @@ input[type=color].in{padding:2px;height:38px;cursor:pointer}
       <button class="btn" id="themeBtn"></button>
       <button class="btn" id="charBtn">人物</button>
       <button class="btn" id="regionBtn">地區</button>
-      <button class="btn" id="familyBtn">家族</button>
       <button class="btn primary" id="addBtn">＋ 新增事件</button>
     </div>
   </header>
@@ -187,7 +186,6 @@ input[type=color].in{padding:2px;height:38px;cursor:pointer}
       <label class="f"><span id="chFormHead">新增人物</span><input class="in" id="chName" maxlength="20" placeholder="姓名" required></label>
       <div class="two">
         <label class="f"><span>地區</span><select class="in" id="chRegion"></select></label>
-        <label class="f"><span>家族</span><select class="in" id="chFamily"></select></label>
       </div>
       <div class="three">
         <label class="f"><span>出生年</span><input class="in" id="chBirth" type="number" step="1" required></label>
@@ -201,17 +199,10 @@ input[type=color].in{padding:2px;height:38px;cursor:pointer}
     </form>
 
     <div class="cform" style="margin-top:16px">
-      <div class="two">
-        <div>
-          <label class="f"><span>新增地區</span><input class="in" id="regionInput" placeholder="例如：中國"></label>
-          <div class="foot" style="margin:0 0 4px"><button type="button" class="btn small primary" id="addRegionBtn">新增地區</button></div>
-          <ul class="clist" id="regionList"></ul>
-        </div>
-        <div>
-          <label class="f"><span>新增家族</span><input class="in" id="familyInput" placeholder="例如：王氏"></label>
-          <div class="foot" style="margin:0 0 4px"><button type="button" class="btn small primary" id="addFamilyBtn">新增家族</button></div>
-          <ul class="clist" id="familyList"></ul>
-        </div>
+      <div>
+        <label class="f"><span>新增地區</span><input class="in" id="regionInput" placeholder="例如：中國"></label>
+        <div class="foot" style="margin:0 0 4px"><button type="button" class="btn small primary" id="addRegionBtn">新增地區</button></div>
+        <ul class="clist" id="regionList"></ul>
       </div>
     </div>
 
@@ -242,13 +233,10 @@ function el(tag, props = {}, ...kids) {
 }
 
 function ensureList(values, fallback) {
+  const source = Array.isArray(values) ? values : (fallback || []);
   const out = [];
   const seen = new Set();
-  (values || []).forEach(v => {
-    const s = String(v || '').trim();
-    if (s && !seen.has(s)) { seen.add(s); out.push(s); }
-  });
-  (fallback || []).forEach(v => {
+  source.forEach(v => {
     const s = String(v || '').trim();
     if (s && !seen.has(s)) { seen.add(s); out.push(s); }
   });
@@ -260,11 +248,11 @@ function normalizeStateData(d) {
   const chars = Array.isArray(base.characters) ? base.characters : [];
   const events = Array.isArray(base.events) ? base.events : [];
   const regions = ensureList(base.regions, ['中國', '日本', '歐洲', '美洲', '中東', '東南亞']);
-  const families = ensureList(base.families, ['王氏', '李氏', '張氏', '陳氏', '居禮家族', '愛因斯坦家族']);
+  const families = [];
 
   chars.forEach(c => {
     if (!c.region && regions.length) c.region = regions[0];
-    if (!c.family && families.length) c.family = families[0];
+    if (c.family != null) delete c.family;
     if (c.order == null) c.order = 0;
   });
   events.forEach(e => {
@@ -288,10 +276,10 @@ function sample() {
     title: '記事年表',
     theme: null,
     regions: ['中國', '日本', '歐洲', '美洲', '中東', '東南亞'],
-    families: ['王氏', '李氏', '張氏', '陳氏', '居禮家族', '愛因斯坦家族'],
+    families: [],
     characters: [
-      { id: a, name: '瑪麗·居禮', birth: 1867, death: 1934, color: COLORS[0], region: '歐洲', family: '居禮家族', order: 0 },
-      { id: b, name: '愛因斯坦', birth: 1879, death: 1955, color: COLORS[1], region: '歐洲', family: '愛因斯坦家族', order: 1 }
+      { id: a, name: '瑪麗·居禮', birth: 1867, death: 1934, color: COLORS[0], region: '歐洲', order: 0 },
+      { id: b, name: '愛因斯坦', birth: 1879, death: 1955, color: COLORS[1], region: '歐洲', order: 1 }
     ],
     events: [
       { id: uid(), year: 1898, type: 'minor', title: '發現釙與鐳', desc: '與皮耶·居禮共同發現兩種新元素。', chars: [a], region: '歐洲' },
@@ -385,8 +373,6 @@ function renderMetadataSelectors() {
   fillSelect(evRegion, state.regions, evRegion.value || '');
   const chRegion = $('#chRegion');
   fillSelect(chRegion, state.regions, chRegion.value || '');
-  const chFamily = $('#chFamily');
-  fillSelect(chFamily, state.families, chFamily.value || '');
 }
 
 function renderRegions() {
@@ -406,31 +392,6 @@ function renderRegions() {
         state.events.forEach(e => { if (e.region === region) e.region = ''; });
         renderMetadataSelectors();
         renderRegions();
-        renderFamilies();
-        renderChars();
-        render();
-        save();
-      } }, '刪除')));
-  });
-}
-
-function renderFamilies() {
-  const list = $('#familyList');
-  list.replaceChildren();
-  if (!state.families.length) {
-    list.append(el('li', {}, el('small', {}, '尚無家族')));
-    return;
-  }
-  state.families.forEach(family => {
-    list.append(el('li', {},
-      el('span', { class: 'nm' }, family),
-      el('button', { class: 'ibtn del', type: 'button', onclick: () => {
-        if (!confirm(`刪除家族「${family}」？相關人物的此家族會保留為未指定。`)) return;
-        state.families = state.families.filter(f => f !== family);
-        state.characters.forEach(c => { if (c.family === family) c.family = ''; });
-        renderMetadataSelectors();
-        renderRegions();
-        renderFamilies();
         renderChars();
         render();
         save();
@@ -442,10 +403,6 @@ $('#regionBtn').onclick = () => {
   $('#chDlg').showModal();
   setTimeout(() => $('#regionInput').focus(), 100);
 };
-$('#familyBtn').onclick = () => {
-  $('#chDlg').showModal();
-  setTimeout(() => $('#familyInput').focus(), 100);
-};
 $('#addRegionBtn').onclick = () => {
   const v = $('#regionInput').value.trim();
   if (!v) { toast('請輸入地區名稱'); return; }
@@ -453,15 +410,6 @@ $('#addRegionBtn').onclick = () => {
   $('#regionInput').value = '';
   renderMetadataSelectors();
   renderRegions();
-  save();
-};
-$('#addFamilyBtn').onclick = () => {
-  const v = $('#familyInput').value.trim();
-  if (!v) { toast('請輸入家族名稱'); return; }
-  if (!state.families.includes(v)) state.families.push(v);
-  $('#familyInput').value = '';
-  renderMetadataSelectors();
-  renderFamilies();
   save();
 };
 
@@ -586,7 +534,6 @@ function resetCharForm() {
   $('#chDeath').value = '';
   $('#chColor').value = nextColor();
   $('#chRegion').value = '';
-  $('#chFamily').value = '';
   $('#chFormHead').textContent = '新增人物';
   $('#chSubmit').textContent = '加入';
 }
@@ -598,7 +545,7 @@ function renderChars() {
 
   const items = sortedCharacters();
   items.forEach(c => {
-    const info = [c.region || '未指定地區', c.family || '未指定家族'].join(' · ');
+    const info = c.region || '未指定地區';
     ul.append(el('li', {},
       el('span', { class: 'sw', style: `background:${c.color}` }),
       el('span', { class: 'nm' }, c.name, ' ', el('small', {}, `${fmtYear(c.birth)} – ${c.death != null ? fmtYear(c.death) : ''}　${info}`)),
@@ -611,7 +558,6 @@ function renderChars() {
         $('#chDeath').value = c.death ?? '';
         $('#chColor').value = c.color;
         $('#chRegion').value = c.region || '';
-        $('#chFamily').value = c.family || '';
         $('#chFormHead').textContent = '編輯人物';
         $('#chSubmit').textContent = '更新';
       } }, '編輯'),
@@ -649,8 +595,7 @@ $('#chForm').addEventListener('submit', ev => {
     birth,
     death,
     color: $('#chColor').value,
-    region: $('#chRegion').value || '',
-    family: $('#chFamily').value || ''
+    region: $('#chRegion').value || ''
   };
 
   if (editingChar) Object.assign(state.characters.find(c => c.id === editingChar), data);
@@ -689,7 +634,6 @@ $('#importFile').onchange = async ev => {
     render();
     renderMetadataSelectors();
     renderRegions();
-    renderFamilies();
     renderChars();
     save();
     toast('匯入完成');
@@ -706,7 +650,6 @@ $('#clearBtn').onclick = () => {
   render();
   renderChars();
   renderRegions();
-  renderFamilies();
   save();
 };
 
@@ -875,7 +818,6 @@ $('#pngBtn').onclick = () => {
 
 renderMetadataSelectors();
 renderRegions();
-renderFamilies();
 renderChars();
 applyTheme();
 render();
