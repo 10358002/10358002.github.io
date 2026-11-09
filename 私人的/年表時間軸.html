@@ -101,9 +101,10 @@ textarea.in{resize:vertical;min-height:84px}
 .hint{font-size:.82rem;color:var(--muted);margin:2px 0 0}
 .foot{display:flex;justify-content:flex-end;gap:8px;margin-top:20px}
 .clist{margin:0 0 16px;padding:0;list-style:none;border-top:1px solid var(--line)}
-.clist li{display:flex;align-items:center;gap:10px;padding:9px 2px;border-bottom:1px solid var(--line)}
+.clist li{display:flex;align-items:center;gap:10px;padding:9px 2px;border-bottom:1px solid var(--line);flex-wrap:wrap}
 .clist .sw{width:11px;height:11px;border-radius:50%;flex:none}
-.clist .nm{flex:1;min-width:0}
+.clist .nm{flex:1 1 180px;min-width:0;word-break:break-word;overflow-wrap:anywhere}
+.clist .ibtn{flex:none}
 .clist small{color:var(--muted)}
 .cform{border:1px dashed var(--line);border-radius:12px;padding:16px 16px 6px}
 .cform .three{display:grid;grid-template-columns:1fr 1fr 54px;gap:10px}
@@ -609,8 +610,8 @@ function renderRelationRows(character) {
   }
 
   relations.forEach(rel => {
-    const row = el('div', { class: 'relation-row', style: 'display:flex;gap:8px;align-items:center;margin-top:8px' });
-    const targetSelect = el('select', { class: 'in', style: 'flex:1.2' });
+    const row = el('div', { class: 'relation-row', style: 'display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap' });
+    const targetSelect = el('select', { class: 'in', style: 'flex:1 1 140px;min-width:0' });
     targetSelect.append(el('option', { value: '' }, '選擇角色'));
     state.characters.filter(c => c.id !== character.id).forEach(c => {
       const option = el('option', { value: c.id }, c.name);
@@ -619,8 +620,8 @@ function renderRelationRows(character) {
     });
     if (!rel.targetId || !state.characters.some(c => c.id === rel.targetId)) targetSelect.value = '';
 
-    const labelInput = el('input', { class: 'in', value: rel.label || '關係', placeholder: '例如：父親', style: 'flex:1' });
-    const removeBtn = el('button', { class: 'btn small danger', type: 'button' }, '移除');
+    const labelInput = el('input', { class: 'in', value: rel.label || '關係', placeholder: '例如：父親', style: 'flex:1 1 140px;min-width:0' });
+    const removeBtn = el('button', { class: 'btn small danger', type: 'button', style: 'flex:none' }, '移除');
 
     targetSelect.onchange = () => {
       const nextTarget = targetSelect.value;
