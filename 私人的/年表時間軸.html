@@ -210,6 +210,32 @@ input[type=color].in{padding:2px;height:38px;cursor:pointer}
   </div>
 </dialog>
 
+<dialog id="charEditorDlg">
+  <div class="dbody">
+    <h2 id="charEditorHead">編輯人物</h2>
+    <form id="charEditorForm" class="cform">
+      <label class="f"><span>姓名</span><input class="in" id="charEditorName" maxlength="20" required></label>
+      <div class="two">
+        <label class="f"><span>地區</span><select class="in" id="charEditorRegion"></select></label>
+      </div>
+      <div class="three">
+        <label class="f"><span>出生年</span><input class="in" id="charEditorBirth" type="number" step="1" required></label>
+        <label class="f"><span>逝世年（選填）</span><input class="in" id="charEditorDeath" type="number" step="1"></label>
+        <label class="f"><span>顏色</span><input class="in" id="charEditorColor" type="color"></label>
+      </div>
+      <div class="f">
+        <span>關係</span>
+        <div id="charRelationList"></div>
+      </div>
+      <div class="foot" style="margin-top:12px">
+        <button type="button" class="btn small" id="charRelationsAdd">＋ 新增關係欄位</button>
+        <button type="button" class="btn small" id="charEditorClose">取消</button>
+        <button type="submit" class="btn small primary">儲存人物</button>
+      </div>
+    </form>
+  </div>
+</dialog>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -253,6 +279,7 @@ function normalizeStateData(d) {
   chars.forEach(c => {
     if (!c.region && regions.length) c.region = regions[0];
     if (c.family != null) delete c.family;
+    c.relations = normalizeRelationEntries(c.relations);
     if (c.order == null) c.order = 0;
   });
   events.forEach(e => {
@@ -525,7 +552,140 @@ function delEvent(id) {
 }
 
 const chDlg = $('#chDlg');
+const charEditorDlg = $('#charEditorDlg');
 let editingChar = null;
+
+function getCharacterById(id) {
+  return state.characters.find(c => c.id === id) || null;
+}
+
+function normalizeRelationEntries(items) {
+  const list = Array.isArray(items) ? items : [];
+  const out = [];
+  const seen = new Set();
+  list.forEach(item => {
+    if (!item || !item.targetId) return;
+    const targetId = String(item.targetId).trim();
+    if (!targetId || targetId === item.id) return;
+    const label = String(item.label || '').trim() || '關係';
+    const key = `${targetId}::${label}`;
+    if (seen.has(key)) return;
+    seen.add(key);
+    out.push({ id: String(item.id || uid()), targetId, label });
+  });
+  return out;
+}
+
+function ensureBidirectionalRelation(charId, targetId, label) {
+  const source = getCharacterById(charId);
+  const target = getCharacterById(targetId);
+  if (!source || !target || charId === targetId) return;
+  const relLabel = String(label || '').trim() || '關係';
+  source.relations = normalizeRelationEntries(source.relations);
+  target.relations = normalizeRelationEntries(target.relations);
+  const sourceExists = source.relations.some(r => r.targetId === targetId && r.label === relLabel);
+  if (!sourceExists) source.relations.push({ id: uid(), targetId, label: relLabel });
+  const targetExists = target.relations.some(r => r.targetId === charId && r.label === relLabel);
+  if (!targetExists) target.relations.push({ id: uid(), targetId: charId, label: relLabel });
+  source.relations = normalizeRelationEntries(source.relations);
+  target.relations = normalizeRelationEntries(target.relations);
+}
+
+function removeBidirectionalRelation(charId, targetId) {
+  const source = getCharacterById(charId);
+  const target = getCharacterById(targetId);
+  if (!source || !target) return;
+  source.relations = normalizeRelationEntries(source.relations).filter(r => r.targetId !== targetId);
+  target.relations = normalizeRelationEntries(target.relations).filter(r => r.targetId !== charId);
+}
+
+function renderRelationRows(character) {
+  const list = $('#charRelationList');
+  list.replaceChildren();
+  const relations = normalizeRelationEntries(character.relations);
+  if (!relations.length) {
+    list.append(el('div', { class: 'empty-note' }, '尚未新增關係欄位'));
+    return;
+  }
+
+  relations.forEach(rel => {
+    const row = el('div', { class: 'relation-row', style: 'display:flex;gap:8px;align-items:center;margin-top:8px' });
+    const targetSelect = el('select', { class: 'in', style: 'flex:1.2' });
+    targetSelect.append(el('option', { value: '' }, '選擇角色'));
+    state.characters.filter(c => c.id !== character.id).forEach(c => {
+      const option = el('option', { value: c.id }, c.name);
+      if (c.id === rel.targetId) option.selected = true;
+      targetSelect.append(option);
+    });
+    if (!rel.targetId || !state.characters.some(c => c.id === rel.targetId)) targetSelect.value = '';
+
+    const labelInput = el('input', { class: 'in', value: rel.label || '關係', placeholder: '例如：父親', style: 'flex:1' });
+    const removeBtn = el('button', { class: 'btn small danger', type: 'button' }, '移除');
+
+    targetSelect.onchange = () => {
+      const nextTarget = targetSelect.value;
+      if (!nextTarget) return;
+      const nextLabel = labelInput.value.trim() || '關係';
+      removeBidirectionalRelation(character.id, rel.targetId);
+      ensureBidirectionalRelation(character.id, nextTarget, nextLabel);
+      renderRelationRows(character);
+    };
+
+    labelInput.oninput = () => {
+      const nextTarget = targetSelect.value;
+      if (!nextTarget) return;
+      const nextLabel = labelInput.value.trim() || '關係';
+      removeBidirectionalRelation(character.id, rel.targetId);
+      ensureBidirectionalRelation(character.id, nextTarget, nextLabel);
+    };
+
+    removeBtn.onclick = () => {
+      if (rel.targetId) removeBidirectionalRelation(character.id, rel.targetId);
+      character.relations = normalizeRelationEntries(character.relations).filter(r => r.id !== rel.id);
+      state.characters.forEach(c => {
+        if (c.id !== character.id) {
+          c.relations = normalizeRelationEntries(c.relations).filter(r => r.targetId !== character.id || r.label !== rel.label);
+        }
+      });
+      renderRelationRows(character);
+    };
+
+    row.append(targetSelect, labelInput, removeBtn);
+    list.append(row);
+  });
+}
+
+function openCharacterEditor(charId) {
+  const character = getCharacterById(charId);
+  if (!character) return;
+  editingChar = charId;
+  $('#charEditorHead').textContent = `編輯人物：${character.name}`;
+  $('#charEditorName').value = character.name;
+  $('#charEditorBirth').value = character.birth ?? '';
+  $('#charEditorDeath').value = character.death ?? '';
+  $('#charEditorColor').value = character.color || COLORS[0];
+  fillSelect($('#charEditorRegion'), state.regions, character.region || '');
+  renderRelationRows(character);
+  charEditorDlg.showModal();
+}
+
+function closeCharacterEditor() {
+  charEditorDlg.close();
+  editingChar = null;
+}
+
+function addRelationField(character) {
+  const current = normalizeRelationEntries(character.relations);
+  const target = state.characters.find(c => c.id !== character.id && !current.some(r => r.targetId === c.id));
+  if (!target) {
+    toast('沒有可新增的關係對象');
+    return;
+  }
+  const newRelation = { id: uid(), targetId: target.id, label: '關係' };
+  ensureBidirectionalRelation(character.id, target.id, newRelation.label);
+  renderRelationRows(character);
+}
+
 function nextColor() { return COLORS[state.characters.length % COLORS.length]; }
 function resetCharForm() {
   editingChar = null;
@@ -546,30 +706,27 @@ function renderChars() {
   const items = sortedCharacters();
   items.forEach(c => {
     const info = c.region || '未指定地區';
-    ul.append(el('li', {},
+    const relInfo = Array.isArray(c.relations) && c.relations.length ? `　關係 ${c.relations.length} 個` : '';
+    const row = el('li', { onclick: () => openCharacterEditor(c.id) },
       el('span', { class: 'sw', style: `background:${c.color}` }),
-      el('span', { class: 'nm' }, c.name, ' ', el('small', {}, `${fmtYear(c.birth)} – ${c.death != null ? fmtYear(c.death) : ''}　${info}`)),
-      el('button', { class: 'ibtn', type: 'button', onclick: () => moveCharacter(c.id, -1) }, '↑'),
-      el('button', { class: 'ibtn', type: 'button', onclick: () => moveCharacter(c.id, 1) }, '↓'),
-      el('button', { class: 'ibtn', type: 'button', onclick: () => {
-        editingChar = c.id;
-        $('#chName').value = c.name;
-        $('#chBirth').value = c.birth;
-        $('#chDeath').value = c.death ?? '';
-        $('#chColor').value = c.color;
-        $('#chRegion').value = c.region || '';
-        $('#chFormHead').textContent = '編輯人物';
-        $('#chSubmit').textContent = '更新';
-      } }, '編輯'),
-      el('button', { class: 'ibtn del', type: 'button', onclick: () => {
+      el('span', { class: 'nm' }, c.name, ' ', el('small', {}, `${fmtYear(c.birth)} – ${c.death != null ? fmtYear(c.death) : ''}　${info}${relInfo}`)),
+      el('button', { class: 'ibtn', type: 'button', onclick: ev => { ev.stopPropagation(); moveCharacter(c.id, -1); } }, '↑'),
+      el('button', { class: 'ibtn', type: 'button', onclick: ev => { ev.stopPropagation(); moveCharacter(c.id, 1); } }, '↓'),
+      el('button', { class: 'ibtn', type: 'button', onclick: ev => { ev.stopPropagation(); openCharacterEditor(c.id); } }, '編輯'),
+      el('button', { class: 'ibtn del', type: 'button', onclick: ev => {
+        ev.stopPropagation();
         if (!confirm(`刪除「${c.name}」？相關事件中的此人物也會一併移除。`)) return;
         state.characters = state.characters.filter(x => x.id !== c.id);
         state.events.forEach(e => e.chars = e.chars.filter(i => i !== c.id));
+        state.characters.forEach(other => {
+          other.relations = normalizeRelationEntries(other.relations).filter(r => r.targetId !== c.id);
+        });
         if (editingChar === c.id) resetCharForm();
         renderChars();
         render();
         save();
-      } }, '刪除')));
+      } }, '刪除'));
+    ul.append(row);
   });
 }
 
@@ -581,6 +738,57 @@ $('#charBtn').onclick = () => {
 };
 $('#chDone').onclick = () => chDlg.close();
 $('#chReset').onclick = resetCharForm;
+$('#charEditorClose').onclick = () => closeCharacterEditor();
+$('#charRelationsAdd').onclick = () => {
+  const current = getCharacterById(editingChar);
+  if (!current) return;
+  addRelationField(current);
+};
+$('#charEditorForm').addEventListener('submit', ev => {
+  ev.preventDefault();
+  const current = getCharacterById(editingChar);
+  if (!current) return;
+  const name = $('#charEditorName').value.trim();
+  const birth = parseInt($('#charEditorBirth').value, 10);
+  const dv = $('#charEditorDeath').value;
+  const death = dv === '' ? null : parseInt(dv, 10);
+  if (!name || isNaN(birth)) { toast('請填寫姓名與出生年'); return; }
+  if (death != null && (isNaN(death) || death < birth)) { toast('逝世年不可早於出生年'); return; }
+
+  current.name = name;
+  current.birth = birth;
+  current.death = death;
+  current.color = $('#charEditorColor').value;
+  current.region = $('#charEditorRegion').value || '';
+
+  const rows = [...document.querySelectorAll('#charRelationList .relation-row')];
+  rows.forEach(row => {
+    const targetId = row.querySelector('select')?.value || '';
+    const label = row.querySelector('input')?.value.trim() || '關係';
+    if (!targetId || targetId === current.id) return;
+    ensureBidirectionalRelation(current.id, targetId, label);
+  });
+
+  const currentRelations = normalizeRelationEntries(current.relations);
+  current.relations = currentRelations.filter(r => r.targetId !== current.id);
+  const remainingIds = rows.map(r => r.querySelector('select')?.value).filter(Boolean);
+  state.characters.forEach(other => {
+    if (other.id === current.id) return;
+    const shouldKeep = remainingIds.includes(other.id);
+    other.relations = normalizeRelationEntries(other.relations).filter(r => r.targetId !== current.id || shouldKeep);
+    if (shouldKeep && !other.relations.some(r => r.targetId === current.id)) {
+      const row = rows.find(r => (r.querySelector('select')?.value || '') === other.id);
+      const label = row?.querySelector('input')?.value.trim() || '關係';
+      ensureBidirectionalRelation(other.id, current.id, label);
+    }
+  });
+
+  renderChars();
+  render();
+  save();
+  closeCharacterEditor();
+});
+
 $('#chForm').addEventListener('submit', ev => {
   ev.preventDefault();
   const name = $('#chName').value.trim();
@@ -595,11 +803,11 @@ $('#chForm').addEventListener('submit', ev => {
     birth,
     death,
     color: $('#chColor').value,
-    region: $('#chRegion').value || ''
+    region: $('#chRegion').value || '',
+    relations: []
   };
 
-  if (editingChar) Object.assign(state.characters.find(c => c.id === editingChar), data);
-  else state.characters.push({ id: uid(), order: state.characters.length, ...data });
+  state.characters.push({ id: uid(), order: state.characters.length, ...data });
 
   resetCharForm();
   renderMetadataSelectors();
