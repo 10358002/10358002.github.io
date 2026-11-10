@@ -1099,6 +1099,50 @@
     }
 
     start();
+
+    function handleHit() {
+      if (player.invincible > 0 || state.phase !== 'playing') return;
+
+      player.lives -= 1;
+      player.invincible = 900;
+      state.hitFlash = 0.8;
+      spawnParticle(player.x + player.w / 2, player.y + player.h / 2, '#ff7a7a', 18);
+      playSfx('hit');
+      updateHUD();
+
+      if (player.lives <= 0) {
+        endGame();
+      } else {
+        toast.textContent = `碰撞！還剩 ${player.lives} 條命`;
+      }
+    }
+
+    function resetAfterHit() {
+      player.x = 120;
+      player.y = state.groundY - player.h;
+      player.vy = 0;
+      player.grounded = true;
+      obstacles.length = 0;
+      particles.length = 0;
+      state.spawnTimer = 700;
+      state.hitFlash = 0;
+      input.left = false;
+      input.right = false;
+      input.jump = false;
+    }
+
+    function restartGame() {
+      stopMusic();
+      resetGamePlayState();
+      state.phase = 'playing';
+      hideOverlay();
+      toast.textContent = '觸碰螢幕可跳躍，電腦請用自訂鍵盤操控';
+      playSfx('start');
+      if (musicEnabled) startMusic();
+      lastTime = performance.now();
+      tryLockLandscape();
+      tryEnterFullscreen();
+    }
   </script>
 </body>
 </html>
