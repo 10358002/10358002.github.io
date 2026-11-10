@@ -344,6 +344,7 @@
     const lifeValue = document.getElementById('lifeValue');
     const toast = document.getElementById('toast');
     const configButton = document.getElementById('configButton');
+    const keyPanel = document.querySelector('.key-panel');
     const overlay = document.getElementById('overlay');
     const menuTitle = document.getElementById('menuTitle');
     const menuText = document.getElementById('menuText');
@@ -351,7 +352,6 @@
     const secondaryBtn = document.getElementById('secondaryBtn');
     const pauseBtn = document.getElementById('pauseBtn');
     const musicToggleBtn = document.getElementById('musicToggleBtn');
-    const keyPanel = document.querySelector('.key-panel');
 
     const BEST_KEY = 'fullScreenRunnerBest';
     const KEY_MAP_KEY = 'fullScreenRunnerKeyMap';
@@ -427,6 +427,8 @@
     const state = {
       phase: 'menu',
       time: 0,
+      timeScore: 0,
+      bonusScore: 0,
       score: 0,
       best: Number(storage.getItem(BEST_KEY)) || 0,
       spawnTimer: 700,
@@ -448,10 +450,13 @@
       moveSpeed: 360,
       hue: '#ff6b57',
       lives: 3,
-      invincible: 0
+      invincible: 0,
+      attackTimer: 0,
+      attackCooldown: 0
     };
 
     const obstacles = [];
+    const monsters = [];
     const particles = [];
 
     function ensureAudio() {
@@ -593,10 +598,18 @@
       state.overlayVisible = false;
     }
 
+    function refreshScore() {
+      state.timeScore = Math.floor(state.time / 180);
+      state.score = state.timeScore + state.bonusScore;
+    }
+
     function resetGamePlayState() {
       obstacles.length = 0;
+      monsters.length = 0;
       particles.length = 0;
       state.time = 0;
+      state.timeScore = 0;
+      state.bonusScore = 0;
       state.score = 0;
       state.spawnTimer = 700;
       state.hitFlash = 0;
@@ -608,6 +621,8 @@
       player.grounded = true;
       player.lives = 3;
       player.invincible = 0;
+      player.attackTimer = 0;
+      player.attackCooldown = 0;
       input.left = false;
       input.right = false;
       input.jump = false;
@@ -624,7 +639,7 @@
       resetGamePlayState();
       state.phase = 'playing';
       hideOverlay();
-      toast.textContent = '觸碰螢幕可跳躍，電腦請用自訂鍵盤操控';
+      toast.textContent = '觸碰螢幕可跳躍，按 F 攻擊怪物';
       playSfx('start');
       if (musicEnabled) startMusic();
       lastTime = performance.now();
@@ -736,6 +751,18 @@
       }
     }
 
+    function spawnMonster() {
+      const width = randomRange(28, 40);
+      const height = randomRange(26, 42);
+      monsters.push({
+        x: canvas.width / (window.devicePixelRatio || 1) + 20,
+        y: state.groundY - height,
+        w: width,
+        h: height,
+        hue: '#4dc98c'
+      });
+    }
+
     function triggerJump() {
       if (state.phase !== 'playing') {
         if (state.phase === 'menu' || state.phase === 'gameover') {
@@ -749,6 +776,16 @@
         spawnParticle(player.x + player.w / 2, player.y + player.h, '#ffe08a', 8);
         playSfx('jump');
       }
+    }
+
+    function triggerAttack() {
+      if (state.phase !== 'playing') return;
+      if (player.attackCooldown > 0) return;
+
+      player.attackTimer = 180;
+      player.attackCooldown = 360;
+      spawnParticle(player.x + player.w + 8, player.y + player.h * 0.45, '#ffd86a', 10);
+      playSfx('bonus');
     }
 
     function handleInput(action, isPressed) {
@@ -785,6 +822,33 @@
       }
     }
 
+    function updateAttack(dt) {
+      player.attackTimer = Math.max(0, player.attackTimer - dt);
+      player.attackCooldown = Math.max(0, player.attackCooldown - dt);
+
+      if (player.attackTimer <= 0) return;
+
+      const attackBox = {
+        x: player.x + player.w - 6,
+        y: player.y + 8,
+        w: 58,
+        h: player.h - 10
+      };
+
+      for (let i = monsters.length - 1; i >= 0; i--) {
+        const monster = monsters[i];
+        const monsterBox = { x: monster.x, y: monster.y, w: monster.w, h: monster.h };
+        if (rectOverlap(attackBox, monsterBox)) {
+          monsters.splice(i, 1);
+          state.bonusScore += 15;
+          refreshScore();
+          spawnParticle(monster.x + monster.w / 2, monster.y + monster.h / 2, '#7ef7a7', 18);
+          playSfx('bonus');
+          toast.textContent = '打到怪物！+15 分';
+        }
+      }
+    }
+
     function update(dt) {
       if (state.phase !== 'playing') return;
 
@@ -794,20 +858,26 @@
       }
 
       state.time += dt;
-      state.score = Math.floor(state.time / 180);
-      const scoreScale = Math.min(state.score, 800);
+      refreshScore();
+      const scoreScale = Math.min(state.timeScore, 800);
       state.worldSpeed = 240 + scoreScale * 0.8 + state.time * 0.009;
       const spawnInterval = clamp(1550 - scoreScale * 7, 620, 1550);
       state.spawnTimer -= dt;
 
       if (state.spawnTimer <= 0) {
-        spawnObstacle();
+        const roll = Math.random();
+        if (roll < 0.55) {
+          spawnObstacle();
+        } else {
+          spawnMonster();
+        }
         state.spawnTimer = spawnInterval + randomRange(80, 180);
       }
 
       saveBestScore();
       updateHUD();
       processDesktopInput(dt);
+      updateAttack(dt);
 
       if (!player.grounded) {
         player.vy += 1750 * (dt / 1000);
@@ -840,6 +910,25 @@
         if (rectOverlap(playerBox, obstacleBox)) {
           handleHit();
           obstacles.splice(i, 1);
+          continue;
+        }
+      }
+
+      for (let i = monsters.length - 1; i >= 0; i--) {
+        const monster = monsters[i];
+        monster.x -= state.worldSpeed * (dt / 1000) * 0.82;
+
+        if (monster.x + monster.w < -20) {
+          monsters.splice(i, 1);
+          continue;
+        }
+
+        const playerBox = { x: player.x + 4, y: player.y + 4, w: player.w - 8, h: player.h - 8 };
+        const monsterBox = { x: monster.x, y: monster.y, w: monster.w, h: monster.h };
+
+        if (rectOverlap(playerBox, monsterBox)) {
+          handleHit();
+          monsters.splice(i, 1);
           continue;
         }
       }
@@ -941,6 +1030,25 @@
       }
     }
 
+    function drawMonsters() {
+      for (const monster of monsters) {
+        ctx.fillStyle = monster.hue;
+        ctx.fillRect(monster.x, monster.y, monster.w, monster.h);
+        ctx.fillStyle = '#1d4a3a';
+        ctx.fillRect(monster.x + 6, monster.y + 6, monster.w - 12, 6);
+        ctx.fillStyle = '#fefefe';
+        ctx.fillRect(monster.x + 8, monster.y + 18, monster.w - 18, 8);
+      }
+    }
+
+    function drawAttackEffect() {
+      if (player.attackTimer <= 0) return;
+      const attackX = player.x + player.w - 4;
+      const attackY = player.y + 8;
+      ctx.fillStyle = 'rgba(255, 216, 106, 0.35)';
+      ctx.fillRect(attackX, attackY, 58, player.h - 10);
+    }
+
     function drawParticles() {
       for (const p of particles) {
         ctx.fillStyle = p.color + 'aa';
@@ -954,7 +1062,9 @@
       ctx.clearRect(0, 0, canvas.width, canvas.height);
       drawBackground();
       drawObstacles();
+      drawMonsters();
       drawPlayer();
+      drawAttackEffect();
       drawParticles();
     }
 
@@ -968,7 +1078,7 @@
 
     document.addEventListener('keydown', (event) => {
       const code = event.code;
-      if (Object.values(keyMap).includes(code) || code === 'Space' || code === 'KeyP' || code === 'Escape') {
+      if (Object.values(keyMap).includes(code) || code === 'Space' || code === 'KeyP' || code === 'Escape' || code === 'KeyF' || code === 'KeyJ') {
         event.preventDefault();
       }
 
@@ -1003,6 +1113,11 @@
           resumeGame();
         } else {
           startGame();
+        }
+      }
+      if (code === 'KeyF' || code === 'KeyJ') {
+        if (state.phase === 'playing') {
+          triggerAttack();
         }
       }
       if (code === 'KeyP' || code === 'Escape') {
@@ -1093,7 +1208,7 @@
       updateKeyButtons();
       updateHUD();
       updateMusicButton();
-      showOverlay('開始遊戲', '避開障礙物，衝到更高分！', '開始遊戲', '再來一次', false);
+      showOverlay('開始遊戲', '避開障礙物，按 F 攻擊怪物！', '開始遊戲', '再來一次', false);
       state.phase = 'menu';
       tryLockLandscape();
       requestAnimationFrame(gameLoop);
