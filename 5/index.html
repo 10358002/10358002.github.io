@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
+  <meta name="viewport" content
   <title>全螢幕閃避跑者</title>
   <style>
     :root {
@@ -344,7 +344,6 @@
     const lifeValue = document.getElementById('lifeValue');
     const toast = document.getElementById('toast');
     const configButton = document.getElementById('configButton');
-    const keyPanel = document.getElementById('keyPanel');
     const overlay = document.getElementById('overlay');
     const menuTitle = document.getElementById('menuTitle');
     const menuText = document.getElementById('menuText');
@@ -352,6 +351,7 @@
     const secondaryBtn = document.getElementById('secondaryBtn');
     const pauseBtn = document.getElementById('pauseBtn');
     const musicToggleBtn = document.getElementById('musicToggleBtn');
+    const keyPanel = document.querySelector('.key-panel');
 
     const BEST_KEY = 'fullScreenRunnerBest';
     const KEY_MAP_KEY = 'fullScreenRunnerKeyMap';
