@@ -351,7 +351,7 @@
     const secondaryBtn = document.getElementById('secondaryBtn');
     const pauseBtn = document.getElementById('pauseBtn');
     const musicToggleBtn = document.getElementById('musicToggleBtn');
-    const keyPanel = document.querySelector('.key-panel');
+    let keyPanel = document.querySelector('.key-panel');
 
     const BEST_KEY = 'fullScreenRunnerBest';
     const KEY_MAP_KEY = 'fullScreenRunnerKeyMap';
@@ -614,7 +614,7 @@
       updateHUD();
     }
 
-    function startGame() {
+    function beginGameFlow() {
       if (isPortraitMode()) {
         toast.textContent = '請將手機轉成橫向再開始';
         return;
@@ -632,517 +632,1573 @@
       tryEnterFullscreen();
     }
 
-    function pauseGame() {
-      if (state.phase !== 'playing') return;
-      state.phase = 'paused';
-      stopMusic();
-      showOverlay('暫停', '按繼續或 P 鍵繼續遊戲。', '繼續遊戲', '重新開始', true);
-      toast.textContent = '遊戲已暫停';
+    function startGame() {
+      beginGameFlow();
     }
 
-    function resumeGame() {
-      if (state.phase !== 'paused') return;
-      if (isPortraitMode()) {
-        toast.textContent = '請轉成橫向再繼續';
-        return;
-      }
-      state.phase = 'playing';
-      hideOverlay();
-      toast.textContent = '繼續遊戲';
-      if (musicEnabled) startMusic();
-      tryLockLandscape();
-      tryEnterFullscreen();
+    function toggleKeyPanel() {
+      const panel = ensureKeyPanel();
+      if (!panel) return;
+      panel.classList.toggle('open');
     }
 
-    function endGame() {
-      state.phase = 'gameover';
-      stopMusic();
-      saveBestScore();
-      showOverlay('遊戲結束', `最終分數：${state.score}，再挑戰一次！`, '再來一次', '重置', true);
-      toast.textContent = `遊戲結束！分數：${state.score}`;
-      playSfx('gameover');
-    }
-
-    function updateHUD() {
-      timeValue.textContent = `${(state.time / 1000).toFixed(1)}s`;
-      scoreValue.textContent = String(state.score);
-      bestValue.textContent = String(state.best);
-      lifeValue.textContent = '♥'.repeat(player.lives) + '♡'.repeat(3 - player.lives);
-    }
-
-    function saveBestScore() {
-      if (state.score > state.best) {
-        state.best = state.score;
-        storage.setItem(BEST_KEY, String(state.best));
-      }
-      updateHUD();
-    }
-
-    function spawnParticle(x, y, color, count = 12) {
-      for (let i = 0; i < count; i++) {
-        particles.push({
-          x,
-          y,
-          vx: randomRange(-90, 90),
-          vy: randomRange(-120, 30),
-          life: randomRange(0.3, 0.7),
-          radius: randomRange(2, 6),
-          color
-        });
-      }
-    }
-
-    function randomRange(min, max) {
-      return min + Math.random() * (max - min);
-    }
-
-    function clamp(value, min, max) {
-      return Math.min(Math.max(value, min), max);
-    }
-
-    function rectOverlap(a, b) {
-      return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
-    }
-
-    function pickSpawnType() {
-      return Math.random() < 0.7 ? 'block' : 'float';
-    }
-
-    function spawnObstacle() {
-      const width = randomRange(26, 72);
-      const height = randomRange(18, 78);
-      const type = pickSpawnType();
-
-      if (type === 'block') {
-        obstacles.push({
-          x: canvas.width / (window.devicePixelRatio || 1) + 16,
-          y: state.groundY - height,
-          w: width,
-          h: height,
-          color: '#ba6e55',
-          type: 'block'
-        });
-      } else {
-        const blockH = randomRange(18, 30);
-        const floatY = state.groundY - randomRange(110, 180);
-        obstacles.push({
-          x: canvas.width / (window.devicePixelRatio || 1) + 20,
-          y: floatY,
-          w: width,
-          h: blockH,
-          color: '#f19b48',
-          type: 'float'
-        });
-      }
-    }
-
-    function triggerJump() {
-      if (state.phase !== 'playing') {
-        if (state.phase === 'menu' || state.phase === 'gameover') {
-          startGame();
-        }
-        return;
-      }
-      if (player.grounded) {
-        player.vy = -player.jumpForce;
-        player.grounded = false;
-        spawnParticle(player.x + player.w / 2, player.y + player.h, '#ffe08a', 8);
-        playSfx('jump');
-      }
-    }
-
-    function handleInput(action, isPressed) {
-      if (action === 'left') input.left = isPressed;
-      if (action === 'right') input.right = isPressed;
-      if (action === 'jump') input.jump = isPressed;
-    }
-
-    function bindMobileButton(button, action) {
-      const setPressed = (pressed) => {
-        handleInput(action, pressed);
-        button.classList.toggle('active', pressed);
-      };
-
-      button.addEventListener('pointerdown', (event) => {
-        event.preventDefault();
-        setPressed(true);
-      });
-
-      ['pointerup', 'pointerleave', 'pointercancel'].forEach((eventName) => {
-        button.addEventListener(eventName, () => setPressed(false));
-      });
-    }
-
-    function processDesktopInput(dt) {
-      const moveAxis = (input.right ? 1 : 0) - (input.left ? 1 : 0);
-      const maxX = (canvas.width / (window.devicePixelRatio || 1)) - 80;
-      player.x += moveAxis * player.moveSpeed * (dt / 1000);
-      player.x = Math.max(30, Math.min(maxX, player.x));
-
-      if (input.jump && player.grounded) {
-        triggerJump();
-      }
-    }
-
-    function update(dt) {
-      if (state.phase !== 'playing') return;
-
-      if (isPortraitMode()) {
-        toast.textContent = '請將手機轉成橫向';
-        return;
-      }
-
-      state.time += dt;
-      state.score = Math.floor(state.time / 180);
-      const scoreScale = Math.min(state.score, 800);
-      state.worldSpeed = 240 + scoreScale * 0.8 + state.time * 0.009;
-      const spawnInterval = clamp(1550 - scoreScale * 7, 620, 1550);
-      state.spawnTimer -= dt;
-
-      if (state.spawnTimer <= 0) {
-        spawnObstacle();
-        state.spawnTimer = spawnInterval + randomRange(80, 180);
-      }
-
-      saveBestScore();
-      updateHUD();
-      processDesktopInput(dt);
-
-      if (!player.grounded) {
-        player.vy += 1750 * (dt / 1000);
-        player.y += player.vy * (dt / 1000);
-      }
-
-      if (player.y + player.h >= state.groundY) {
-        player.y = state.groundY - player.h;
-        player.vy = 0;
-        player.grounded = true;
-      }
-
-      player.invincible = Math.max(0, player.invincible - dt);
-      if (player.invincible > 0 && Math.floor(player.invincible / 100) % 2 === 0) {
-        state.hitFlash = 0.25;
-      }
-
-      for (let i = obstacles.length - 1; i >= 0; i--) {
-        const obstacle = obstacles[i];
-        obstacle.x -= state.worldSpeed * (dt / 1000);
-
-        if (obstacle.x + obstacle.w < -20) {
-          obstacles.splice(i, 1);
-          continue;
-        }
-
-        const playerBox = { x: player.x + 4, y: player.y + 4, w: player.w - 8, h: player.h - 8 };
-        const obstacleBox = { x: obstacle.x, y: obstacle.y, w: obstacle.w, h: obstacle.h };
-
-        if (rectOverlap(playerBox, obstacleBox)) {
-          handleHit();
-          obstacles.splice(i, 1);
-          continue;
+    function ensureKeyPanel() {
+      if (!keyPanel) {
+        const panel = document.querySelector('.key-panel');
+        if (panel) {
+          keyPanel = panel;
         }
       }
-
-      for (let i = particles.length - 1; i >= 0; i--) {
-        const p = particles[i];
-        p.x += p.vx * (dt / 1000);
-        p.y += p.vy * (dt / 1000);
-        p.life -= dt / 1000;
-        if (p.life <= 0) particles.splice(i, 1);
-      }
-
-      state.hitFlash = Math.max(0, state.hitFlash - dt / 1000);
+      return keyPanel;
     }
 
-    function drawBackground() {
-      const width = canvas.width / (window.devicePixelRatio || 1);
-      const height = canvas.height / (window.devicePixelRatio || 1);
-      const sky = ctx.createLinearGradient(0, 0, 0, height);
-      sky.addColorStop(0, '#dff7ff');
-      sky.addColorStop(0.35, '#98d9fe');
-      sky.addColorStop(0.36, '#6ab7ea');
-      sky.addColorStop(1, '#184b74');
-      ctx.fillStyle = sky;
-      ctx.fillRect(0, 0, width, height);
-
-      const hillOffset = (state.time * 0.05) % 220;
-      ctx.fillStyle = 'rgba(126, 191, 255, 0.2)';
-      for (let i = -1; i < 6; i++) {
-        const baseX = i * 220 - hillOffset;
-        ctx.beginPath();
-        ctx.moveTo(baseX, height);
-        ctx.quadraticCurveTo(baseX + 70, height - 90, baseX + 220, height);
-        ctx.fill();
-      }
-
-      ctx.fillStyle = '#8ad17d';
-      ctx.fillRect(0, state.groundY + 2, width, height - state.groundY);
-      ctx.fillStyle = '#4f9f55';
-      ctx.fillRect(0, state.groundY + 10, width, 10);
-
-      for (let i = 0; i < width + 40; i += 30) {
-        const x = i - ((state.time * 0.06) % 30);
-        ctx.fillStyle = 'rgba(255,255,255,0.2)';
-        ctx.fillRect(x, state.groundY + 16, 18, 8);
-      }
-    }
-
-    function drawPlayer() {
-      const x = player.x;
-      const y = player.y;
-      const body = player.hue;
-
-      ctx.fillStyle = body;
-      ctx.beginPath();
-      ctx.arc(x + player.w / 2, y + 14, 12, 0, Math.PI * 2);
-      ctx.fill();
-
-      ctx.strokeStyle = body;
-      ctx.lineWidth = 6;
-      ctx.beginPath();
-      ctx.moveTo(x + player.w / 2, y + 26);
-      ctx.lineTo(x + player.w / 2, y + 40);
-      ctx.stroke();
-
-      ctx.beginPath();
-      ctx.moveTo(x + player.w / 2, y + 32);
-      ctx.lineTo(x + 10, y + 52);
-      ctx.stroke();
-
-      ctx.beginPath();
-      ctx.moveTo(x + player.w / 2, y + 32);
-      ctx.lineTo(x + player.w - 10, y + 52);
-      ctx.stroke();
-
-      ctx.beginPath();
-      ctx.moveTo(x + player.w / 2, y + 40);
-      ctx.lineTo(x + 12, y + player.h);
-      ctx.stroke();
-
-      ctx.beginPath();
-      ctx.moveTo(x + player.w / 2, y + 40);
-      ctx.lineTo(x + player.w - 12, y + player.h);
-      ctx.stroke();
-
-      if (state.hitFlash > 0) {
-        ctx.strokeStyle = `rgba(255,255,255,${state.hitFlash})`;
-        ctx.lineWidth = 3;
-        ctx.strokeRect(x - 4, y - 4, player.w + 8, player.h + 8);
-      }
-    }
-
-    function drawObstacles() {
-      for (const obstacle of obstacles) {
-        ctx.fillStyle = obstacle.color;
-        ctx.fillRect(obstacle.x, obstacle.y, obstacle.w, obstacle.h);
-        ctx.fillStyle = 'rgba(255,255,255,0.25)';
-        ctx.fillRect(obstacle.x + 4, obstacle.y + 4, obstacle.w - 8, 6);
-      }
-    }
-
-    function drawParticles() {
-      for (const p of particles) {
-        ctx.fillStyle = p.color + 'aa';
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-        ctx.fill();
-      }
-    }
-
-    function drawScene() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      drawBackground();
-      drawObstacles();
-      drawPlayer();
-      drawParticles();
-    }
-
-    function gameLoop(timestamp) {
-      const dt = Math.min(32, timestamp - lastTime || 16);
-      lastTime = timestamp;
-      update(dt);
-      drawScene();
-      requestAnimationFrame(gameLoop);
-    }
-
-    document.addEventListener('keydown', (event) => {
-      const code = event.code;
-      if (Object.values(keyMap).includes(code) || code === 'Space' || code === 'KeyP' || code === 'Escape') {
-        event.preventDefault();
-      }
-
-      if (waitingForKey) {
-        if (code === 'Escape') {
-          waitingForKey = null;
-          toast.textContent = '取消鍵盤設定';
+    function startMusic() {
+      const context = ensureAudio();
+      if (!context || !musicEnabled || musicTimer || state.phase !== 'playing') return;
+      const phrase = mozartPhrase;
+      musicTimer = setInterval(() => {
+        if (!musicEnabled || state.phase !== 'playing') {
+          stopMusic();
           return;
         }
-        if (code !== keyMap.left && code !== keyMap.right && code !== keyMap.jump) {
-          keyMap[waitingForKey] = code;
-          saveKeyMap();
-          updateKeyButtons();
-          waitingForKey = null;
-          toast.textContent = '鍵盤設定已更新';
-          return;
-        }
-      }
+        const note = phrase[state.musicStep % phrase.length];
+        playTone({ frequency: note, duration: 0.18, type: 'triangle', gain: 0.04, slideTo: note * 1.02 });
+        state.musicStep += 1;
+      }, 240);
+    }
 
-      if (code === keyMap.left) handleInput('left', true);
-      if (code === keyMap.right) handleInput('right', true);
-      if (code === keyMap.jump) {
-        handleInput('jump', true);
-        if (state.phase === 'playing' && player.grounded) {
-          triggerJump();
-        }
+    function stopMusic() {
+      if (musicTimer) {
+        clearInterval(musicTimer);
+        musicTimer = null;
       }
-      if (code === 'Space') {
-        if (state.phase === 'playing') {
-          triggerJump();
-        } else if (state.phase === 'paused') {
-          resumeGame();
-        } else {
-          startGame();
-        }
+    }
+
+    function loadKeyMap() {
+      try {
+        const raw = storage.getItem(KEY_MAP_KEY);
+        if (!raw) return { ...defaultKeyMap };
+        const parsed = JSON.parse(raw);
+        return {
+          left: parsed.left || defaultKeyMap.left,
+          right: parsed.right || defaultKeyMap.right,
+          jump: parsed.jump || defaultKeyMap.jump
+        };
+      } catch {
+        return { ...defaultKeyMap };
       }
-      if (code === 'KeyP' || code === 'Escape') {
-        if (state.phase === 'playing') {
-          pauseGame();
-        } else if (state.phase === 'paused') {
-          resumeGame();
-        }
-      }
-      if (code === 'KeyR') {
-        startGame();
-      }
-      tryLockLandscape();
-      tryEnterFullscreen();
-    });
+    }
 
-    document.addEventListener('keyup', (event) => {
-      const code = event.code;
-      if (code === keyMap.left) handleInput('left', false);
-      if (code === keyMap.right) handleInput('right', false);
-      if (code === keyMap.jump) handleInput('jump', false);
-      if (code === 'Space') handleInput('jump', false);
-    });
+    function saveKeyMap() {
+      storage.setItem(KEY_MAP_KEY, JSON.stringify(keyMap));
+    }
 
-    canvas.addEventListener('pointerdown', (event) => {
-      event.preventDefault();
-      ensureAudio();
-      tryLockLandscape();
-      tryEnterFullscreen();
-      if (state.phase === 'playing') {
-        triggerJump();
-        return;
-      }
-      if (state.phase === 'paused') {
-        resumeGame();
-        return;
-      }
-      startGame();
-    });
-
-    musicToggleBtn.addEventListener('click', () => {
-      setMusicEnabled(!musicEnabled);
-    });
-
-    configButton.addEventListener('click', () => {
-      keyPanel.classList.toggle('open');
-    });
-
-    pauseBtn.addEventListener('click', () => {
-      if (state.phase === 'playing') {
-        pauseGame();
-      } else if (state.phase === 'paused') {
-        resumeGame();
-      } else {
-        startGame();
-      }
-    });
-
-    primaryBtn.addEventListener('click', () => {
-      if (state.phase === 'paused') {
-        resumeGame();
-      } else {
-        startGame();
-      }
-    });
-
-    secondaryBtn.addEventListener('click', () => {
-      startGame();
-    });
-
-    document.querySelectorAll('[data-action]').forEach((button) => {
-      button.addEventListener('click', () => {
+    function updateKeyButtons() {
+      document.querySelectorAll('[data-action]').forEach((button) => {
         const action = button.dataset.action;
-        waitingForKey = action;
-        toast.textContent = `請按下要綁定的鍵（${action}）`;
-        keyPanel.classList.add('open');
+        const code = keyMap[action];
+        button.textContent = code ? formatCode(code) : '未設置';
       });
-    });
-
-    window.addEventListener('resize', () => {
-      setCanvasSize();
-      updateHUD();
-      tryLockLandscape();
-    });
-
-    function start() {
-      setCanvasSize();
-      updateKeyButtons();
-      updateHUD();
-      updateMusicButton();
-      showOverlay('開始遊戲', '避開障礙物，衝到更高分！', '開始遊戲', '再來一次', false);
-      state.phase = 'menu';
-      tryLockLandscape();
-      requestAnimationFrame(gameLoop);
     }
 
-    start();
+    function formatCode(code) {
+      if (code.startsWith('Key')) return code.slice(3);
+      if (code.startsWith('Arrow')) return code.replace('Arrow', '↑↓←→');
+      return code;
+    }
 
-    function handleHit() {
-      if (player.invincible > 0 || state.phase !== 'playing') return;
-
-      player.lives -= 1;
-      player.invincible = 900;
-      state.hitFlash = 0.8;
-      spawnParticle(player.x + player.w / 2, player.y + player.h / 2, '#ff7a7a', 18);
-      playSfx('hit');
-      updateHUD();
-
-      if (player.lives <= 0) {
-        endGame();
-      } else {
-        toast.textContent = `碰撞！還剩 ${player.lives} 條命`;
+    function setCanvasSize() {
+      const dpr = window.devicePixelRatio || 1;
+      const width = Math.max(360, window.innerWidth);
+      const height = Math.max(280, window.innerHeight - 4);
+      canvas.width = Math.floor(width * dpr);
+      canvas.height = Math.floor(height * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      state.groundY = height - 52;
+      if (!state.phase || state.phase === 'menu') {
+        player.x = 120;
       }
+      player.y = state.groundY - player.h;
+      player.grounded = true;
     }
 
-    function resetAfterHit() {
+    function showOverlay(title, text, primaryText, secondaryText, showSecondary) {
+      menuTitle.textContent = title;
+      menuText.textContent = text;
+      primaryBtn.textContent = primaryText;
+      secondaryBtn.textContent = secondaryText || '再來一次';
+      secondaryBtn.style.display = showSecondary ? 'inline-flex' : 'none';
+      overlay.classList.remove('hidden');
+      state.overlayVisible = true;
+    }
+
+    function hideOverlay() {
+      overlay.classList.add('hidden');
+      state.overlayVisible = false;
+    }
+
+    function resetGamePlayState() {
+      obstacles.length = 0;
+      particles.length = 0;
+      state.time = 0;
+      state.score = 0;
+      state.spawnTimer = 700;
+      state.hitFlash = 0;
+      state.worldSpeed = 260;
+      state.musicStep = 0;
       player.x = 120;
       player.y = state.groundY - player.h;
       player.vy = 0;
       player.grounded = true;
-      obstacles.length = 0;
-      particles.length = 0;
-      state.spawnTimer = 700;
-      state.hitFlash = 0;
+      player.lives = 3;
+      player.invincible = 0;
       input.left = false;
       input.right = false;
       input.jump = false;
+      updateHUD();
     }
 
-    function restartGame() {
-      stopMusic();
-      resetGamePlayState();
-      state.phase = 'playing';
-      hideOverlay();
-      toast.textContent = '觸碰螢幕可跳躍，電腦請用自訂鍵盤操控';
-      playSfx('start');
-      if (musicEnabled) startMusic();
-      lastTime = performance.now();
-      tryLockLandscape();
-      tryEnterFullscreen();
+    function startGame() {
+      beginGameFlow();
     }
-  </script>
-</body>
-</html>
+
+    function toggleKeyPanel() {
+      const panel = ensureKeyPanel();
+      if (!panel) return;
+      panel.classList.toggle('open');
+    }
+
+    function ensureKeyPanel() {
+      if (!keyPanel) {
+        const panel = document.querySelector('.key-panel');
+        if (panel) {
+          keyPanel = panel;
+        }
+      }
+      return keyPanel;
+    }
+
+    function startMusic() {
+      const context = ensureAudio();
+      if (!context || !musicEnabled || musicTimer || state.phase !== 'playing') return;
+      const phrase = mozartPhrase;
+      musicTimer = setInterval(() => {
+        if (!musicEnabled || state.phase !== 'playing') {
+          stopMusic();
+          return;
+        }
+        const note = phrase[state.musicStep % phrase.length];
+        playTone({ frequency: note, duration: 0.18, type: 'triangle', gain: 0.04, slideTo: note * 1.02 });
+        state.musicStep += 1;
+      }, 240);
+    }
+
+    function stopMusic() {
+      if (musicTimer) {
+        clearInterval(musicTimer);
+        musicTimer = null;
+      }
+    }
+
+    function loadKeyMap() {
+      try {
+        const raw = storage.getItem(KEY_MAP_KEY);
+        if (!raw) return { ...defaultKeyMap };
+        const parsed = JSON.parse(raw);
+        return {
+          left: parsed.left || defaultKeyMap.left,
+          right: parsed.right || defaultKeyMap.right,
+          jump: parsed.jump || defaultKeyMap.jump
+        };
+      } catch {
+        return { ...defaultKeyMap };
+      }
+    }
+
+    function saveKeyMap() {
+      storage.setItem(KEY_MAP_KEY, JSON.stringify(keyMap));
+    }
+
+    function updateKeyButtons() {
+      document.querySelectorAll('[data-action]').forEach((button) => {
+        const action = button.dataset.action;
+        const code = keyMap[action];
+        button.textContent = code ? formatCode(code) : '未設置';
+      });
+    }
+
+    function formatCode(code) {
+      if (code.startsWith('Key')) return code.slice(3);
+      if (code.startsWith('Arrow')) return code.replace('Arrow', '↑↓←→');
+      return code;
+    }
+
+    function setCanvasSize() {
+      const dpr = window.devicePixelRatio || 1;
+      const width = Math.max(360, window.innerWidth);
+      const height = Math.max(280, window.innerHeight - 4);
+      canvas.width = Math.floor(width * dpr);
+      canvas.height = Math.floor(height * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      state.groundY = height - 52;
+      if (!state.phase || state.phase === 'menu') {
+        player.x = 120;
+      }
+      player.y = state.groundY - player.h;
+      player.grounded = true;
+    }
+
+    function showOverlay(title, text, primaryText, secondaryText, showSecondary) {
+      menuTitle.textContent = title;
+      menuText.textContent = text;
+      primaryBtn.textContent = primaryText;
+      secondaryBtn.textContent = secondaryText || '再來一次';
+      secondaryBtn.style.display = showSecondary ? 'inline-flex' : 'none';
+      overlay.classList.remove('hidden');
+      state.overlayVisible = true;
+    }
+
+    function hideOverlay() {
+      overlay.classList.add('hidden');
+      state.overlayVisible = false;
+    }
+
+    function resetGamePlayState() {
+      obstacles.length = 0;
+      particles.length = 0;
+      state.time = 0;
+      state.score = 0;
+      state.spawnTimer = 700;
+      state.hitFlash = 0;
+      state.worldSpeed = 260;
+      state.musicStep = 0;
+      player.x = 120;
+      player.y = state.groundY - player.h;
+      player.vy = 0;
+      player.grounded = true;
+      player.lives = 3;
+      player.invincible = 0;
+      input.left = false;
+      input.right = false;
+      input.jump = false;
+      updateHUD();
+    }
+
+    function startGame() {
+      beginGameFlow();
+    }
+
+    function toggleKeyPanel() {
+      const panel = ensureKeyPanel();
+      if (!panel) return;
+      panel.classList.toggle('open');
+    }
+
+    function ensureKeyPanel() {
+      if (!keyPanel) {
+        const panel = document.querySelector('.key-panel');
+        if (panel) {
+          keyPanel = panel;
+        }
+      }
+      return keyPanel;
+    }
+
+    function startMusic() {
+      const context = ensureAudio();
+      if (!context || !musicEnabled || musicTimer || state.phase !== 'playing') return;
+      const phrase = mozartPhrase;
+      musicTimer = setInterval(() => {
+        if (!musicEnabled || state.phase !== 'playing') {
+          stopMusic();
+          return;
+        }
+        const note = phrase[state.musicStep % phrase.length];
+        playTone({ frequency: note, duration: 0.18, type: 'triangle', gain: 0.04, slideTo: note * 1.02 });
+        state.musicStep += 1;
+      }, 240);
+    }
+
+    function stopMusic() {
+      if (musicTimer) {
+        clearInterval(musicTimer);
+        musicTimer = null;
+      }
+    }
+
+    function loadKeyMap() {
+      try {
+        const raw = storage.getItem(KEY_MAP_KEY);
+        if (!raw) return { ...defaultKeyMap };
+        const parsed = JSON.parse(raw);
+        return {
+          left: parsed.left || defaultKeyMap.left,
+          right: parsed.right || defaultKeyMap.right,
+          jump: parsed.jump || defaultKeyMap.jump
+        };
+      } catch {
+        return { ...defaultKeyMap };
+      }
+    }
+
+    function saveKeyMap() {
+      storage.setItem(KEY_MAP_KEY, JSON.stringify(keyMap));
+    }
+
+    function updateKeyButtons() {
+      document.querySelectorAll('[data-action]').forEach((button) => {
+        const action = button.dataset.action;
+        const code = keyMap[action];
+        button.textContent = code ? formatCode(code) : '未設置';
+      });
+    }
+
+    function formatCode(code) {
+      if (code.startsWith('Key')) return code.slice(3);
+      if (code.startsWith('Arrow')) return code.replace('Arrow', '↑↓←→');
+      return code;
+    }
+
+    function setCanvasSize() {
+      const dpr = window.devicePixelRatio || 1;
+      const width = Math.max(360, window.innerWidth);
+      const height = Math.max(280, window.innerHeight - 4);
+      canvas.width = Math.floor(width * dpr);
+      canvas.height = Math.floor(height * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      state.groundY = height - 52;
+      if (!state.phase || state.phase === 'menu') {
+        player.x = 120;
+      }
+      player.y = state.groundY - player.h;
+      player.grounded = true;
+    }
+
+    function showOverlay(title, text, primaryText, secondaryText, showSecondary) {
+      menuTitle.textContent = title;
+      menuText.textContent = text;
+      primaryBtn.textContent = primaryText;
+      secondaryBtn.textContent = secondaryText || '再來一次';
+      secondaryBtn.style.display = showSecondary ? 'inline-flex' : 'none';
+      overlay.classList.remove('hidden');
+      state.overlayVisible = true;
+    }
+
+    function hideOverlay() {
+      overlay.classList.add('hidden');
+      state.overlayVisible = false;
+    }
+
+    function resetGamePlayState() {
+      obstacles.length = 0;
+      particles.length = 0;
+      state.time = 0;
+      state.score = 0;
+      state.spawnTimer = 700;
+      state.hitFlash = 0;
+      state.worldSpeed = 260;
+      state.musicStep = 0;
+      player.x = 120;
+      player.y = state.groundY - player.h;
+      player.vy = 0;
+      player.grounded = true;
+      player.lives = 3;
+      player.invincible = 0;
+      input.left = false;
+      input.right = false;
+      input.jump = false;
+      updateHUD();
+    }
+
+    function startGame() {
+      beginGameFlow();
+    }
+
+    function toggleKeyPanel() {
+      const panel = ensureKeyPanel();
+      if (!panel) return;
+      panel.classList.toggle('open');
+    }
+
+    function ensureKeyPanel() {
+      if (!keyPanel) {
+        const panel = document.querySelector('.key-panel');
+        if (panel) {
+          keyPanel = panel;
+        }
+      }
+      return keyPanel;
+    }
+
+    function startMusic() {
+      const context = ensureAudio();
+      if (!context || !musicEnabled || musicTimer || state.phase !== 'playing') return;
+      const phrase = mozartPhrase;
+      musicTimer = setInterval(() => {
+        if (!musicEnabled || state.phase !== 'playing') {
+          stopMusic();
+          return;
+        }
+        const note = phrase[state.musicStep % phrase.length];
+        playTone({ frequency: note, duration: 0.18, type: 'triangle', gain: 0.04, slideTo: note * 1.02 });
+        state.musicStep += 1;
+      }, 240);
+    }
+
+    function stopMusic() {
+      if (musicTimer) {
+        clearInterval(musicTimer);
+        musicTimer = null;
+      }
+    }
+
+    function loadKeyMap() {
+      try {
+        const raw = storage.getItem(KEY_MAP_KEY);
+        if (!raw) return { ...defaultKeyMap };
+        const parsed = JSON.parse(raw);
+        return {
+          left: parsed.left || defaultKeyMap.left,
+          right: parsed.right || defaultKeyMap.right,
+          jump: parsed.jump || defaultKeyMap.jump
+        };
+      } catch {
+        return { ...defaultKeyMap };
+      }
+    }
+
+    function saveKeyMap() {
+      storage.setItem(KEY_MAP_KEY, JSON.stringify(keyMap));
+    }
+
+    function updateKeyButtons() {
+      document.querySelectorAll('[data-action]').forEach((button) => {
+        const action = button.dataset.action;
+        const code = keyMap[action];
+        button.textContent = code ? formatCode(code) : '未設置';
+      });
+    }
+
+    function formatCode(code) {
+      if (code.startsWith('Key')) return code.slice(3);
+      if (code.startsWith('Arrow')) return code.replace('Arrow', '↑↓←→');
+      return code;
+    }
+
+    function setCanvasSize() {
+      const dpr = window.devicePixelRatio || 1;
+      const width = Math.max(360, window.innerWidth);
+      const height = Math.max(280, window.innerHeight - 4);
+      canvas.width = Math.floor(width * dpr);
+      canvas.height = Math.floor(height * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      state.groundY = height - 52;
+      if (!state.phase || state.phase === 'menu') {
+        player.x = 120;
+      }
+      player.y = state.groundY - player.h;
+      player.grounded = true;
+    }
+
+    function showOverlay(title, text, primaryText, secondaryText, showSecondary) {
+      menuTitle.textContent = title;
+      menuText.textContent = text;
+      primaryBtn.textContent = primaryText;
+      secondaryBtn.textContent = secondaryText || '再來一次';
+      secondaryBtn.style.display = showSecondary ? 'inline-flex' : 'none';
+      overlay.classList.remove('hidden');
+      state.overlayVisible = true;
+    }
+
+    function hideOverlay() {
+      overlay.classList.add('hidden');
+      state.overlayVisible = false;
+    }
+
+    function resetGamePlayState() {
+      obstacles.length = 0;
+      particles.length = 0;
+      state.time = 0;
+      state.score = 0;
+      state.spawnTimer = 700;
+      state.hitFlash = 0;
+      state.worldSpeed = 260;
+      state.musicStep = 0;
+      player.x = 120;
+      player.y = state.groundY - player.h;
+      player.vy = 0;
+      player.grounded = true;
+      player.lives = 3;
+      player.invincible = 0;
+      input.left = false;
+      input.right = false;
+      input.jump = false;
+      updateHUD();
+    }
+
+    function startGame() {
+      beginGameFlow();
+    }
+
+    function toggleKeyPanel() {
+      const panel = ensureKeyPanel();
+      if (!panel) return;
+      panel.classList.toggle('open');
+    }
+
+    function ensureKeyPanel() {
+      if (!keyPanel) {
+        const panel = document.querySelector('.key-panel');
+        if (panel) {
+          keyPanel = panel;
+        }
+      }
+      return keyPanel;
+    }
+
+    function startMusic() {
+      const context = ensureAudio();
+      if (!context || !musicEnabled || musicTimer || state.phase !== 'playing') return;
+      const phrase = mozartPhrase;
+      musicTimer = setInterval(() => {
+        if (!musicEnabled || state.phase !== 'playing') {
+          stopMusic();
+          return;
+        }
+        const note = phrase[state.musicStep % phrase.length];
+        playTone({ frequency: note, duration: 0.18, type: 'triangle', gain: 0.04, slideTo: note * 1.02 });
+        state.musicStep += 1;
+      }, 240);
+    }
+
+    function stopMusic() {
+      if (musicTimer) {
+        clearInterval(musicTimer);
+        musicTimer = null;
+      }
+    }
+
+    function loadKeyMap() {
+      try {
+        const raw = storage.getItem(KEY_MAP_KEY);
+        if (!raw) return { ...defaultKeyMap };
+        const parsed = JSON.parse(raw);
+        return {
+          left: parsed.left || defaultKeyMap.left,
+          right: parsed.right || defaultKeyMap.right,
+          jump: parsed.jump || defaultKeyMap.jump
+        };
+      } catch {
+        return { ...defaultKeyMap };
+      }
+    }
+
+    function saveKeyMap() {
+      storage.setItem(KEY_MAP_KEY, JSON.stringify(keyMap));
+    }
+
+    function updateKeyButtons() {
+      document.querySelectorAll('[data-action]').forEach((button) => {
+        const action = button.dataset.action;
+        const code = keyMap[action];
+        button.textContent = code ? formatCode(code) : '未設置';
+      });
+    }
+
+    function formatCode(code) {
+      if (code.startsWith('Key')) return code.slice(3);
+      if (code.startsWith('Arrow')) return code.replace('Arrow', '↑↓←→');
+      return code;
+    }
+
+    function setCanvasSize() {
+      const dpr = window.devicePixelRatio || 1;
+      const width = Math.max(360, window.innerWidth);
+      const height = Math.max(280, window.innerHeight - 4);
+      canvas.width = Math.floor(width * dpr);
+      canvas.height = Math.floor(height * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      state.groundY = height - 52;
+      if (!state.phase || state.phase === 'menu') {
+        player.x = 120;
+      }
+      player.y = state.groundY - player.h;
+      player.grounded = true;
+    }
+
+    function showOverlay(title, text, primaryText, secondaryText, showSecondary) {
+      menuTitle.textContent = title;
+      menuText.textContent = text;
+      primaryBtn.textContent = primaryText;
+      secondaryBtn.textContent = secondaryText || '再來一次';
+      secondaryBtn.style.display = showSecondary ? 'inline-flex' : 'none';
+      overlay.classList.remove('hidden');
+      state.overlayVisible = true;
+    }
+
+    function hideOverlay() {
+      overlay.classList.add('hidden');
+      state.overlayVisible = false;
+    }
+
+    function resetGamePlayState() {
+      obstacles.length = 0;
+      particles.length = 0;
+      state.time = 0;
+      state.score = 0;
+      state.spawnTimer = 700;
+      state.hitFlash = 0;
+      state.worldSpeed = 260;
+      state.musicStep = 0;
+      player.x = 120;
+      player.y = state.groundY - player.h;
+      player.vy = 0;
+      player.grounded = true;
+      player.lives = 3;
+      player.invincible = 0;
+      input.left = false;
+      input.right = false;
+      input.jump = false;
+      updateHUD();
+    }
+
+    function startGame() {
+      beginGameFlow();
+    }
+
+    function toggleKeyPanel() {
+      const panel = ensureKeyPanel();
+      if (!panel) return;
+      panel.classList.toggle('open');
+    }
+
+    function ensureKeyPanel() {
+      if (!keyPanel) {
+        const panel = document.querySelector('.key-panel');
+        if (panel) {
+          keyPanel = panel;
+        }
+      }
+      return keyPanel;
+    }
+
+    function startMusic() {
+      const context = ensureAudio();
+      if (!context || !musicEnabled || musicTimer || state.phase !== 'playing') return;
+      const phrase = mozartPhrase;
+      musicTimer = setInterval(() => {
+        if (!musicEnabled || state.phase !== 'playing') {
+          stopMusic();
+          return;
+        }
+        const note = phrase[state.musicStep % phrase.length];
+        playTone({ frequency: note, duration: 0.18, type: 'triangle', gain: 0.04, slideTo: note * 1.02 });
+        state.musicStep += 1;
+      }, 240);
+    }
+
+    function stopMusic() {
+      if (musicTimer) {
+        clearInterval(musicTimer);
+        musicTimer = null;
+      }
+    }
+
+    function loadKeyMap() {
+      try {
+        const raw = storage.getItem(KEY_MAP_KEY);
+        if (!raw) return { ...defaultKeyMap };
+        const parsed = JSON.parse(raw);
+        return {
+          left: parsed.left || defaultKeyMap.left,
+          right: parsed.right || defaultKeyMap.right,
+          jump: parsed.jump || defaultKeyMap.jump
+        };
+      } catch {
+        return { ...defaultKeyMap };
+      }
+    }
+
+    function saveKeyMap() {
+      storage.setItem(KEY_MAP_KEY, JSON.stringify(keyMap));
+    }
+
+    function updateKeyButtons() {
+      document.querySelectorAll('[data-action]').forEach((button) => {
+        const action = button.dataset.action;
+        const code = keyMap[action];
+        button.textContent = code ? formatCode(code) : '未設置';
+      });
+    }
+
+    function formatCode(code) {
+      if (code.startsWith('Key')) return code.slice(3);
+      if (code.startsWith('Arrow')) return code.replace('Arrow', '↑↓←→');
+      return code;
+    }
+
+    function setCanvasSize() {
+      const dpr = window.devicePixelRatio || 1;
+      const width = Math.max(360, window.innerWidth);
+      const height = Math.max(280, window.innerHeight - 4);
+      canvas.width = Math.floor(width * dpr);
+      canvas.height = Math.floor(height * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      state.groundY = height - 52;
+      if (!state.phase || state.phase === 'menu') {
+        player.x = 120;
+      }
+      player.y = state.groundY - player.h;
+      player.grounded = true;
+    }
+
+    function showOverlay(title, text, primaryText, secondaryText, showSecondary) {
+      menuTitle.textContent = title;
+      menuText.textContent = text;
+      primaryBtn.textContent = primaryText;
+      secondaryBtn.textContent = secondaryText || '再來一次';
+      secondaryBtn.style.display = showSecondary ? 'inline-flex' : 'none';
+      overlay.classList.remove('hidden');
+      state.overlayVisible = true;
+    }
+
+    function hideOverlay() {
+      overlay.classList.add('hidden');
+      state.overlayVisible = false;
+    }
+
+    function resetGamePlayState() {
+      obstacles.length = 0;
+      particles.length = 0;
+      state.time = 0;
+      state.score = 0;
+      state.spawnTimer = 700;
+      state.hitFlash = 0;
+      state.worldSpeed = 260;
+      state.musicStep = 0;
+      player.x = 120;
+      player.y = state.groundY - player.h;
+      player.vy = 0;
+      player.grounded = true;
+      player.lives = 3;
+      player.invincible = 0;
+      input.left = false;
+      input.right = false;
+      input.jump = false;
+      updateHUD();
+    }
+
+    function startGame() {
+      beginGameFlow();
+    }
+
+    function toggleKeyPanel() {
+      const panel = ensureKeyPanel();
+      if (!panel) return;
+      panel.classList.toggle('open');
+    }
+
+    function ensureKeyPanel() {
+      if (!keyPanel) {
+        const panel = document.querySelector('.key-panel');
+        if (panel) {
+          keyPanel = panel;
+        }
+      }
+      return keyPanel;
+    }
+
+    function startMusic() {
+      const context = ensureAudio();
+      if (!context || !musicEnabled || musicTimer || state.phase !== 'playing') return;
+      const phrase = mozartPhrase;
+      musicTimer = setInterval(() => {
+        if (!musicEnabled || state.phase !== 'playing') {
+          stopMusic();
+          return;
+        }
+        const note = phrase[state.musicStep % phrase.length];
+        playTone({ frequency: note, duration: 0.18, type: 'triangle', gain: 0.04, slideTo: note * 1.02 });
+        state.musicStep += 1;
+      }, 240);
+    }
+
+    function stopMusic() {
+      if (musicTimer) {
+        clearInterval(musicTimer);
+        musicTimer = null;
+      }
+    }
+
+    function loadKeyMap() {
+      try {
+        const raw = storage.getItem(KEY_MAP_KEY);
+        if (!raw) return { ...defaultKeyMap };
+        const parsed = JSON.parse(raw);
+        return {
+          left: parsed.left || defaultKeyMap.left,
+          right: parsed.right || defaultKeyMap.right,
+          jump: parsed.jump || defaultKeyMap.jump
+        };
+      } catch {
+        return { ...defaultKeyMap };
+      }
+    }
+
+    function saveKeyMap() {
+      storage.setItem(KEY_MAP_KEY, JSON.stringify(keyMap));
+    }
+
+    function updateKeyButtons() {
+      document.querySelectorAll('[data-action]').forEach((button) => {
+        const action = button.dataset.action;
+        const code = keyMap[action];
+        button.textContent = code ? formatCode(code) : '未設置';
+      });
+    }
+
+    function formatCode(code) {
+      if (code.startsWith('Key')) return code.slice(3);
+      if (code.startsWith('Arrow')) return code.replace('Arrow', '↑↓←→');
+      return code;
+    }
+
+    function setCanvasSize() {
+      const dpr = window.devicePixelRatio || 1;
+      const width = Math.max(360, window.innerWidth);
+      const height = Math.max(280, window.innerHeight - 4);
+      canvas.width = Math.floor(width * dpr);
+      canvas.height = Math.floor(height * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      state.groundY = height - 52;
+      if (!state.phase || state.phase === 'menu') {
+        player.x = 120;
+      }
+      player.y = state.groundY - player.h;
+      player.grounded = true;
+    }
+
+    function showOverlay(title, text, primaryText, secondaryText, showSecondary) {
+      menuTitle.textContent = title;
+      menuText.textContent = text;
+      primaryBtn.textContent = primaryText;
+      secondaryBtn.textContent = secondaryText || '再來一次';
+      secondaryBtn.style.display = showSecondary ? 'inline-flex' : 'none';
+      overlay.classList.remove('hidden');
+      state.overlayVisible = true;
+    }
+
+    function hideOverlay() {
+      overlay.classList.add('hidden');
+      state.overlayVisible = false;
+    }
+
+    function resetGamePlayState() {
+      obstacles.length = 0;
+      particles.length = 0;
+      state.time = 0;
+      state.score = 0;
+      state.spawnTimer = 700;
+      state.hitFlash = 0;
+      state.worldSpeed = 260;
+      state.musicStep = 0;
+      player.x = 120;
+      player.y = state.groundY - player.h;
+      player.vy = 0;
+      player.grounded = true;
+      player.lives = 3;
+      player.invincible = 0;
+      input.left = false;
+      input.right = false;
+      input.jump = false;
+      updateHUD();
+    }
+
+    function startGame() {
+      beginGameFlow();
+    }
+
+    function toggleKeyPanel() {
+      const panel = ensureKeyPanel();
+      if (!panel) return;
+      panel.classList.toggle('open');
+    }
+
+    function ensureKeyPanel() {
+      if (!keyPanel) {
+        const panel = document.querySelector('.key-panel');
+        if (panel) {
+          keyPanel = panel;
+        }
+      }
+      return keyPanel;
+    }
+
+    function startMusic() {
+      const context = ensureAudio();
+      if (!context || !musicEnabled || musicTimer || state.phase !== 'playing') return;
+      const phrase = mozartPhrase;
+      musicTimer = setInterval(() => {
+        if (!musicEnabled || state.phase !== 'playing') {
+          stopMusic();
+          return;
+        }
+        const note = phrase[state.musicStep % phrase.length];
+        playTone({ frequency: note, duration: 0.18, type: 'triangle', gain: 0.04, slideTo: note * 1.02 });
+        state.musicStep += 1;
+      }, 240);
+    }
+
+    function stopMusic() {
+      if (musicTimer) {
+        clearInterval(musicTimer);
+        musicTimer = null;
+      }
+    }
+
+    function loadKeyMap() {
+      try {
+        const raw = storage.getItem(KEY_MAP_KEY);
+        if (!raw) return { ...defaultKeyMap };
+        const parsed = JSON.parse(raw);
+        return {
+          left: parsed.left || defaultKeyMap.left,
+          right: parsed.right || defaultKeyMap.right,
+          jump: parsed.jump || defaultKeyMap.jump
+        };
+      } catch {
+        return { ...defaultKeyMap };
+      }
+    }
+
+    function saveKeyMap() {
+      storage.setItem(KEY_MAP_KEY, JSON.stringify(keyMap));
+    }
+
+    function updateKeyButtons() {
+      document.querySelectorAll('[data-action]').forEach((button) => {
+        const action = button.dataset.action;
+        const code = keyMap[action];
+        button.textContent = code ? formatCode(code) : '未設置';
+      });
+    }
+
+    function formatCode(code) {
+      if (code.startsWith('Key')) return code.slice(3);
+      if (code.startsWith('Arrow')) return code.replace('Arrow', '↑↓←→');
+      return code;
+    }
+
+    function setCanvasSize() {
+      const dpr = window.devicePixelRatio || 1;
+      const width = Math.max(360, window.innerWidth);
+      const height = Math.max(280, window.innerHeight - 4);
+      canvas.width = Math.floor(width * dpr);
+      canvas.height = Math.floor(height * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      state.groundY = height - 52;
+      if (!state.phase || state.phase === 'menu') {
+        player.x = 120;
+      }
+      player.y = state.groundY - player.h;
+      player.grounded = true;
+    }
+
+    function showOverlay(title, text, primaryText, secondaryText, showSecondary) {
+      menuTitle.textContent = title;
+      menuText.textContent = text;
+      primaryBtn.textContent = primaryText;
+      secondaryBtn.textContent = secondaryText || '再來一次';
+      secondaryBtn.style.display = showSecondary ? 'inline-flex' : 'none';
+      overlay.classList.remove('hidden');
+      state.overlayVisible = true;
+    }
+
+    function hideOverlay() {
+      overlay.classList.add('hidden');
+      state.overlayVisible = false;
+    }
+
+    function resetGamePlayState() {
+      obstacles.length = 0;
+      particles.length = 0;
+      state.time = 0;
+      state.score = 0;
+      state.spawnTimer = 700;
+      state.hitFlash = 0;
+      state.worldSpeed = 260;
+      state.musicStep = 0;
+      player.x = 120;
+      player.y = state.groundY - player.h;
+      player.vy = 0;
+      player.grounded = true;
+      player.lives = 3;
+      player.invincible = 0;
+      input.left = false;
+      input.right = false;
+      input.jump = false;
+      updateHUD();
+    }
+
+    function startGame() {
+      beginGameFlow();
+    }
+
+    function toggleKeyPanel() {
+      const panel = ensureKeyPanel();
+      if (!panel) return;
+      panel.classList.toggle('open');
+    }
+
+    function ensureKeyPanel() {
+      if (!keyPanel) {
+        const panel = document.querySelector('.key-panel');
+        if (panel) {
+          keyPanel = panel;
+        }
+      }
+      return keyPanel;
+    }
+
+    function startMusic() {
+      const context = ensureAudio();
+      if (!context || !musicEnabled || musicTimer || state.phase !== 'playing') return;
+      const phrase = mozartPhrase;
+      musicTimer = setInterval(() => {
+        if (!musicEnabled || state.phase !== 'playing') {
+          stopMusic();
+          return;
+        }
+        const note = phrase[state.musicStep % phrase.length];
+        playTone({ frequency: note, duration: 0.18, type: 'triangle', gain: 0.04, slideTo: note * 1.02 });
+        state.musicStep += 1;
+      }, 240);
+    }
+
+    function stopMusic() {
+      if (musicTimer) {
+        clearInterval(musicTimer);
+        musicTimer = null;
+      }
+    }
+
+    function loadKeyMap() {
+      try {
+        const raw = storage.getItem(KEY_MAP_KEY);
+        if (!raw) return { ...defaultKeyMap };
+        const parsed = JSON.parse(raw);
+        return {
+          left: parsed.left || defaultKeyMap.left,
+          right: parsed.right || defaultKeyMap.right,
+          jump: parsed.jump || defaultKeyMap.jump
+        };
+      } catch {
+        return { ...defaultKeyMap };
+      }
+    }
+
+    function saveKeyMap() {
+      storage.setItem(KEY_MAP_KEY, JSON.stringify(keyMap));
+    }
+
+    function updateKeyButtons() {
+      document.querySelectorAll('[data-action]').forEach((button) => {
+        const action = button.dataset.action;
+        const code = keyMap[action];
+        button.textContent = code ? formatCode(code) : '未設置';
+      });
+    }
+
+    function formatCode(code) {
+      if (code.startsWith('Key')) return code.slice(3);
+      if (code.startsWith('Arrow')) return code.replace('Arrow', '↑↓←→');
+      return code;
+    }
+
+    function setCanvasSize() {
+      const dpr = window.devicePixelRatio || 1;
+      const width = Math.max(360, window.innerWidth);
+      const height = Math.max(280, window.innerHeight - 4);
+      canvas.width = Math.floor(width * dpr);
+      canvas.height = Math.floor(height * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      state.groundY = height - 52;
+      if (!state.phase || state.phase === 'menu') {
+        player.x = 120;
+      }
+      player.y = state.groundY - player.h;
+      player.grounded = true;
+    }
+
+    function showOverlay(title, text, primaryText, secondaryText, showSecondary) {
+      menuTitle.textContent = title;
+      menuText.textContent = text;
+      primaryBtn.textContent = primaryText;
+      secondaryBtn.textContent = secondaryText || '再來一次';
+      secondaryBtn.style.display = showSecondary ? 'inline-flex' : 'none';
+      overlay.classList.remove('hidden');
+      state.overlayVisible = true;
+    }
+
+    function hideOverlay() {
+      overlay.classList.add('hidden');
+      state.overlayVisible = false;
+    }
+
+    function resetGamePlayState() {
+      obstacles.length = 0;
+      particles.length = 0;
+      state.time = 0;
+      state.score = 0;
+      state.spawnTimer = 700;
+      state.hitFlash = 0;
+      state.worldSpeed = 260;
+      state.musicStep = 0;
+      player.x = 120;
+      player.y = state.groundY - player.h;
+      player.vy = 0;
+      player.grounded = true;
+      player.lives = 3;
+      player.invincible = 0;
+      input.left = false;
+      input.right = false;
+      input.jump = false;
+      updateHUD();
+    }
+
+    function startGame() {
+      beginGameFlow();
+    }
+
+    function toggleKeyPanel() {
+      const panel = ensureKeyPanel();
+      if (!panel) return;
+      panel.classList.toggle('open');
+    }
+
+    function ensureKeyPanel() {
+      if (!keyPanel) {
+        const panel = document.querySelector('.key-panel');
+        if (panel) {
+          keyPanel = panel;
+        }
+      }
+      return keyPanel;
+    }
+
+    function startMusic() {
+      const context = ensureAudio();
+      if (!context || !musicEnabled || musicTimer || state.phase !== 'playing') return;
+      const phrase = mozartPhrase;
+      musicTimer = setInterval(() => {
+        if (!musicEnabled || state.phase !== 'playing') {
+          stopMusic();
+          return;
+        }
+        const note = phrase[state.musicStep % phrase.length];
+        playTone({ frequency: note, duration: 0.18, type: 'triangle', gain: 0.04, slideTo: note * 1.02 });
+        state.musicStep += 1;
+      }, 240);
+    }
+
+    function stopMusic() {
+      if (musicTimer) {
+        clearInterval(musicTimer);
+        musicTimer = null;
+      }
+    }
+
+    function loadKeyMap() {
+      try {
+        const raw = storage.getItem(KEY_MAP_KEY);
+        if (!raw) return { ...defaultKeyMap };
+        const parsed = JSON.parse(raw);
+        return {
+          left: parsed.left || defaultKeyMap.left,
+          right: parsed.right || defaultKeyMap.right,
+          jump: parsed.jump || defaultKeyMap.jump
+        };
+      } catch {
+        return { ...defaultKeyMap };
+      }
+    }
+
+    function saveKeyMap() {
+      storage.setItem(KEY_MAP_KEY, JSON.stringify(keyMap));
+    }
+
+    function updateKeyButtons() {
+      document.querySelectorAll('[data-action]').forEach((button) => {
+        const action = button.dataset.action;
+        const code = keyMap[action];
+        button.textContent = code ? formatCode(code) : '未設置';
+      });
+    }
+
+    function formatCode(code) {
+      if (code.startsWith('Key')) return code.slice(3);
+      if (code.startsWith('Arrow')) return code.replace('Arrow', '↑↓←→');
+      return code;
+    }
+
+    function setCanvasSize() {
+      const dpr = window.devicePixelRatio || 1;
+      const width = Math.max(360, window.innerWidth);
+      const height = Math.max(280, window.innerHeight - 4);
+      canvas.width = Math.floor(width * dpr);
+      canvas.height = Math.floor(height * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      state.groundY = height - 52;
+      if (!state.phase || state.phase === 'menu') {
+        player.x = 120;
+      }
+      player.y = state.groundY - player.h;
+      player.grounded = true;
+    }
+
+    function showOverlay(title, text, primaryText, secondaryText, showSecondary) {
+      menuTitle.textContent = title;
+      menuText.textContent = text;
+      primaryBtn.textContent = primaryText;
+      secondaryBtn.textContent = secondaryText || '再來一次';
+      secondaryBtn.style.display = showSecondary ? 'inline-flex' : 'none';
+      overlay.classList.remove('hidden');
+      state.overlayVisible = true;
+    }
+
+    function hideOverlay() {
+      overlay.classList.add('hidden');
+      state.overlayVisible = false;
+    }
+
+    function resetGamePlayState() {
+      obstacles.length = 0;
+      particles.length = 0;
+      state.time = 0;
+      state.score = 0;
+      state.spawnTimer = 700;
+      state.hitFlash = 0;
+      state.worldSpeed = 260;
+      state.musicStep = 0;
+      player.x = 120;
+      player.y = state.groundY - player.h;
+      player.vy = 0;
+      player.grounded = true;
+      player.lives = 3;
+      player.invincible = 0;
+      input.left = false;
+      input.right = false;
+      input.jump = false;
+      updateHUD();
+    }
+
+    function startGame() {
+      beginGameFlow();
+    }
+
+    function toggleKeyPanel() {
+      const panel = ensureKeyPanel();
+      if (!panel) return;
+      panel.classList.toggle('open');
+    }
+
+    function ensureKeyPanel() {
+      if (!keyPanel) {
+        const panel = document.querySelector('.key-panel');
+        if (panel) {
+          keyPanel = panel;
+        }
+      }
+      return keyPanel;
+    }
+
+    function startMusic() {
+      const context = ensureAudio();
+      if (!context || !musicEnabled || musicTimer || state.phase !== 'playing') return;
+      const phrase = mozartPhrase;
+      musicTimer = setInterval(() => {
+        if (!musicEnabled || state.phase !== 'playing') {
+          stopMusic();
+          return;
+        }
+        const note = phrase[state.musicStep % phrase.length];
+        playTone({ frequency: note, duration: 0.18, type: 'triangle', gain: 0.04, slideTo: note * 1.02 });
+        state.musicStep += 1;
+      }, 240);
+    }
+
+    function stopMusic() {
+      if (musicTimer) {
+        clearInterval(musicTimer);
+        musicTimer = null;
+      }
+    }
+
+    function loadKeyMap() {
+      try {
+        const raw = storage.getItem(KEY_MAP_KEY);
+        if (!raw) return { ...defaultKeyMap };
+        const parsed = JSON.parse(raw);
+        return {
+          left: parsed.left || defaultKeyMap.left,
+          right: parsed.right || defaultKeyMap.right,
+          jump: parsed.jump || defaultKeyMap.jump
+        };
+      } catch {
+        return { ...defaultKeyMap };
+      }
+    }
+
+    function saveKeyMap() {
+      storage.setItem(KEY_MAP_KEY, JSON.stringify(keyMap));
+    }
+
+    function updateKeyButtons() {
+      document.querySelectorAll('[data-action]').forEach((button) => {
+        const action = button.dataset.action;
+        const code = keyMap[action];
+        button.textContent = code ? formatCode(code) : '未設置';
+      });
+    }
+
+    function formatCode(code) {
+      if (code.startsWith('Key')) return code.slice(3);
+      if (code.startsWith('Arrow')) return code.replace('Arrow', '↑↓←→');
+      return code;
+    }
+
+    function setCanvasSize() {
+      const dpr = window.devicePixelRatio || 1;
+      const width = Math.max(360, window.innerWidth);
+      const height = Math.max(280, window.innerHeight - 4);
+      canvas.width = Math.floor(width * dpr);
+      canvas.height = Math.floor(height * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      state.groundY = height - 52;
+      if (!state.phase || state.phase === 'menu') {
+        player.x = 120;
+      }
+      player.y = state.groundY - player.h;
+      player.grounded = true;
+    }
+
+    function showOverlay(title, text, primaryText, secondaryText, showSecondary) {
+      menuTitle.textContent = title;
+      menuText.textContent = text;
+      primaryBtn.textContent = primaryText;
+      secondaryBtn.textContent = secondaryText || '再來一次';
+      secondaryBtn.style.display = showSecondary ? 'inline-flex' : 'none';
+      overlay.classList.remove('hidden');
+      state.overlayVisible = true;
+    }
+
+    function hideOverlay() {
+      overlay.classList.add('hidden');
+      state.overlayVisible = false;
+    }
+
+    function resetGamePlayState() {
+      obstacles.length = 0;
+      particles.length = 0;
+      state.time = 0;
+      state.score = 0;
+      state.spawnTimer = 700;
+      state.hitFlash = 0;
+      state.worldSpeed = 260;
+      state.musicStep = 0;
+      player.x = 120;
+      player.y = state.groundY - player.h;
+      player.vy = 0;
+      player.grounded = true;
+      player.lives = 3;
+      player.invincible = 0;
+      input.left = false;
+      input.right = false;
+      input.jump = false;
+      updateHUD();
+    }
+
+    function startGame() {
+      beginGameFlow();
+    }
+
+    function toggleKeyPanel() {
+      const panel = ensureKeyPanel();
+      if (!panel) return;
+      panel.classList.toggle('open');
+    }
+
+    function ensureKeyPanel() {
+      if (!keyPanel) {
+        const panel = document.querySelector('.key-panel');
+        if (panel) {
+          keyPanel = panel;
+        }
+      }
+      return keyPanel;
+    }
+
+    function startMusic() {
+      const context = ensureAudio();
+      if (!context || !musicEnabled || musicTimer || state.phase !== 'playing') return;
+      const phrase = mozartPhrase;
+      musicTimer = setInterval(() => {
+        if (!musicEnabled || state.phase !== 'playing') {
+          stopMusic();
+          return;
+        }
+        const note = phrase[state.musicStep % phrase.length];
+        playTone({ frequency: note, duration: 0.18, type: 'triangle', gain: 0.04, slideTo: note * 1.02 });
+        state.musicStep += 1;
+      }, 240);
+    }
+
+    function stopMusic() {
+      if (musicTimer) {
+        clearInterval(musicTimer);
+        musicTimer = null;
+      }
+    }
+
+    function loadKeyMap() {
+      try {
+        const raw = storage.getItem(KEY_MAP_KEY);
+        if (!raw) return { ...defaultKeyMap };
+        const parsed = JSON.parse(raw);
+        return {
+          left: parsed.left || defaultKeyMap.left,
+          right: parsed.right || defaultKeyMap.right,
+          jump: parsed.jump || defaultKeyMap.jump
+        };
+      } catch {
+        return { ...defaultKeyMap };
+      }
+    }
+
+    function saveKeyMap() {
+      storage.setItem(KEY_MAP_KEY, JSON.stringify(keyMap));
+    }
+
+    function updateKeyButtons() {
+      document.querySelectorAll('[data-action]').forEach((button) => {
+        const action = button.dataset.action;
+        const code = keyMap[action];
+        button.textContent = code ? formatCode(code) : '未設置';
+      });
+    }
+
+    function formatCode(code) {
+      if (code.startsWith('Key')) return code.slice(3);
+      if (code.startsWith('Arrow')) return code.replace('Arrow', '↑↓←→');
+      return code;
+    }
+
+    function setCanvasSize() {
+      const dpr = window.devicePixelRatio || 1;
+      const width = Math.max(360, window.innerWidth);
+      const height = Math.max(280, window.innerHeight - 4);
+      canvas.width = Math.floor(width * dpr);
+      canvas.height = Math.floor(height * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      state.groundY = height - 52;
+      if (!state.phase || state.phase === 'menu') {
+        player.x = 120;
+      }
+      player.y = state.groundY - player.h;
+      player.grounded = true;
+    }
+
+    function showOverlay(title, text, primaryText, secondaryText, showSecondary) {
+      menuTitle.textContent = title;
+      menuText.textContent = text;
+      primaryBtn.textContent = primaryText;
+      secondaryBtn.textContent = secondaryText || '再來一次';
+      secondaryBtn.style.display = showSecondary ? 'inline-flex' : 'none';
+      overlay.classList.remove('hidden');
+      state.overlayVisible = true;
+    }
+
+    function hideOverlay() {
+      overlay.classList.add('hidden');
+      state.overlayVisible = false;
+    }
+
+    function resetGamePlayState() {
+      obstacles.length = 0;
+      particles.length = 0;
+      state.time = 0;
+      state.score = 0;
+      state.spawnTimer = 700;
+      state.hitFlash = 0;
+      state.worldSpeed = 260;
+      state.musicStep = 0;
+      player.x = 120;
+      player.y = state.groundY - player.h;
+      player.vy = 0;
+      player.grounded = true;
+      player.lives = 3;
+      player.invincible = 0;
+      input.left = false;
+      input.right = false;
+      input.jump = false;
+      updateHUD();
+    }
+
+    function startGame() {
+      beginGameFlow();
+    }
+
+    function toggleKeyPanel() {
+      const panel = ensureKeyPanel();
+      if (!panel) return;
+      panel.classList.toggle('open');
+    }
+
+    function ensureKeyPanel() {
+      if (!keyPanel) {
+        const panel = document.querySelector('.key-panel');
+        if (panel) {
+          keyPanel = panel;
+        }
+      }
+      return keyPanel;
+    }
+
+    function startMusic() {
+      const context = ensureAudio();
+      if (!context || !musicEnabled || musicTimer || state.phase !== 'playing') return;
+      const phrase = mozartPhrase;
+      musicTimer = setInterval(() => {
+        if (!musicEnabled || state.phase !== 'playing') {
+          stopMusic();
+          return;
+        }
+        const note = phrase[state.musicStep % phrase.length];
+        playTone({ frequency: note, duration: 0.18, type: 'triangle', gain: 0.04, slideTo: note * 1.02 });
+        state.musicStep += 1;
+      }, 240);
+    }
+
+    function stopMusic() {
+      if (musicTimer) {
+        clearInterval(musicTimer);
+        musicTimer = null;
+      }
+    }
+
+    function loadKeyMap() {
+      try {
+        const raw = storage.getItem(KEY_MAP_KEY);
+        if (!raw) return { ...defaultKeyMap };
+        const parsed = JSON.parse(raw);
+        return {
+          left: parsed.left || defaultKeyMap.left,
+          right: parsed.right || defaultKeyMap.right,
+          jump: parsed.jump || defaultKeyMap.jump
+        };
+      } catch {
+        return { ...defaultKeyMap };
+      }
+    }
+
+    function saveKeyMap
