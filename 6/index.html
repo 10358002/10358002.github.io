@@ -146,23 +146,18 @@
       transform: translateY(0);
     }
 
+    button:disabled {
+      opacity: 0.65;
+      cursor: not-allowed;
+      transform: none;
+    }
+
     .status {
       margin-top: 18px;
       font-size: 0.9rem;
       color: var(--muted);
       min-height: 1.5em;
       letter-spacing: 0.04em;
-    }
-
-    .warning {
-      margin-top: 14px;
-      font-size: 0.76rem;
-      color: #75572d;
-      background: rgba(246, 231, 177, 0.4);
-      border: 1px solid rgba(180, 142, 72, 0.4);
-      padding: 10px 12px;
-      border-radius: 10px;
-      line-height: 1.6;
     }
   </style>
 </head>
@@ -178,9 +173,6 @@
 
     <button id="countBtn" type="button">點擊計數 +1</button>
     <div class="status" id="status">載入中...</div>
-    <div class="warning">
-      請先把下方的 GAS Web App URL 替換成你部署後的網址。
-    </div>
   </div>
 
   <script>
@@ -196,7 +188,6 @@
     async function requestCount(action = 'get') {
       const url = `${COUNT_ENDPOINT}?action=${encodeURIComponent(action)}`;
       const response = await fetch(url, { method: 'GET' });
-
       const text = await response.text();
 
       if (!response.ok) {
@@ -214,7 +205,8 @@
       const response = await fetch(COUNT_ENDPOINT, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          // 關鍵修正：使用 text/plain 避開瀏覽器的 CORS OPTIONS 預檢請求
+          'Content-Type': 'text/plain;charset=utf-8'
         },
         body: JSON.stringify({ action: 'increment' })
       });
@@ -246,6 +238,7 @@
 
     countBtn.addEventListener('click', async () => {
       try {
+        countBtn.disabled = true; // 防止連點重複送出
         showMessage('計數中...');
         const data = await incrementCount();
         countEl.textContent = Number(data.count || 0);
@@ -253,6 +246,8 @@
       } catch (error) {
         showMessage('後端設定錯誤：' + error.message);
         console.error('incrementCount error:', error);
+      } finally {
+        countBtn.disabled = false;
       }
     });
 
