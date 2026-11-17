@@ -6,13 +6,18 @@
   <title>網站計數器</title>
   <style>
     :root {
-      --bg: #f4f7fb;
-      --card: #ffffff;
-      --primary: #2563eb;
-      --primary-dark: #1d4ed8;
-      --text: #1f2937;
-      --muted: #6b7280;
-      --shadow: rgba(37, 99, 235, 0.15);
+      --bg-1: #f6f0e4;
+      --bg-2: #e7dcc1;
+      --panel: rgba(255, 255, 255, 0.7);
+      --panel-strong: rgba(255, 255, 255, 0.88);
+      --gold-1: #d4af67;
+      --gold-2: #b88a2a;
+      --gold-3: #f6e7b1;
+      --ink: #3a2d1d;
+      --muted: #7d6c53;
+      --line: rgba(180, 142, 72, 0.5);
+      --shadow: rgba(87, 70, 31, 0.16);
+      --success: #7a5c2a;
     }
 
     * { box-sizing: border-box; }
@@ -22,50 +27,119 @@
       min-height: 100vh;
       display: grid;
       place-items: center;
-      background: linear-gradient(135deg, #eef4ff, var(--bg));
-      font-family: "Microsoft JhengHei", "PingFang TC", sans-serif;
-      color: var(--text);
+      background:
+        radial-gradient(circle at top, rgba(255,255,255,0.85), transparent 38%),
+        linear-gradient(135deg, var(--bg-1), var(--bg-2));
+      font-family: "Microsoft JhengHei", "PingFang TC", serif;
+      color: var(--ink);
+      position: relative;
+      overflow: hidden;
+    }
+
+    body::before,
+    body::after {
+      content: "";
+      position: absolute;
+      width: 420px;
+      height: 420px;
+      border: 1px solid rgba(212, 175, 103, 0.35);
+      border-radius: 50%;
+      pointer-events: none;
+    }
+
+    body::before {
+      top: -160px;
+      left: -90px;
+    }
+
+    body::after {
+      right: -80px;
+      bottom: -180px;
     }
 
     .card {
-      width: min(90vw, 420px);
-      background: var(--card);
-      border-radius: 18px;
-      box-shadow: 0 18px 45px var(--shadow);
-      padding: 32px 24px;
+      position: relative;
+      width: min(90vw, 430px);
+      background: linear-gradient(180deg, var(--panel-strong), rgba(255,255,255,0.72));
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      box-shadow: 0 18px 40px var(--shadow), inset 0 0 0 1px rgba(255,255,255,0.6);
+      padding: 32px 28px 26px;
       text-align: center;
+      backdrop-filter: blur(6px);
+    }
+
+    .ornament {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 22px;
+      margin-bottom: 14px;
+      color: var(--gold-2);
+      font-size: 1.6rem;
+      letter-spacing: 0.2em;
+    }
+
+    .ornament::before,
+    .ornament::after {
+      content: "✦";
+      opacity: 0.85;
     }
 
     h1 {
       margin: 0 0 18px;
-      font-size: 1.9rem;
+      font-size: clamp(1.8rem, 4vw, 2.4rem);
+      letter-spacing: 0.08em;
+      font-weight: 700;
+      color: #4d3a25;
+    }
+
+    .count-wrap {
+      position: relative;
+      padding: 18px 20px 16px;
+      margin: 10px 0 18px;
+      background: linear-gradient(180deg, rgba(250,247,239,0.9), rgba(255,255,255,0.7));
+      border: 1px solid rgba(180, 142, 72, 0.45);
+      border-radius: 16px;
+      box-shadow: inset 0 0 18px rgba(212, 175, 103, 0.1);
+    }
+
+    .count-label {
+      display: block;
+      font-size: 0.8rem;
+      letter-spacing: 0.18em;
+      color: var(--muted);
+      margin-bottom: 10px;
+      text-transform: uppercase;
     }
 
     .count {
-      font-size: clamp(2.5rem, 8vw, 4rem);
+      font-size: clamp(2.8rem, 7vw, 4.5rem);
       font-weight: 700;
-      color: var(--primary);
-      margin: 18px 0 24px;
+      color: #8d6a2f;
       letter-spacing: 0.08em;
+      text-shadow: 0 2px 0 rgba(255,255,255,0.8), 0 6px 18px rgba(179, 140, 75, 0.18);
     }
 
     button {
       width: 100%;
-      border: none;
-      border-radius: 12px;
-      padding: 14px 18px;
+      border: 1px solid rgba(184,138,42,0.8);
+      border-radius: 14px;
+      padding: 15px 18px;
       font-size: 1rem;
       font-weight: 700;
+      letter-spacing: 0.08em;
       cursor: pointer;
-      color: white;
-      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-      transition: transform 0.15s ease, filter 0.15s ease;
-      box-shadow: 0 10px 20px rgba(37, 99, 235, 0.25);
+      color: #fffaf0;
+      background: linear-gradient(135deg, #d4af67, #b88a2a 52%, #8d6a2f);
+      box-shadow: 0 10px 18px rgba(184,138,42,0.28);
+      transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
     }
 
     button:hover {
-      filter: brightness(1.05);
       transform: translateY(-1px);
+      box-shadow: 0 14px 24px rgba(184,138,42,0.32);
+      filter: brightness(1.04);
     }
 
     button:active {
@@ -76,24 +150,32 @@
       margin-top: 18px;
       font-size: 0.9rem;
       color: var(--muted);
-      min-height: 1.2em;
+      min-height: 1.5em;
+      letter-spacing: 0.04em;
     }
 
     .warning {
-      margin-top: 12px;
-      font-size: 0.8rem;
-      color: #b45309;
-      background: #fff7ed;
-      padding: 8px 10px;
-      border-radius: 8px;
-      line-height: 1.5;
+      margin-top: 14px;
+      font-size: 0.76rem;
+      color: #75572d;
+      background: rgba(246, 231, 177, 0.4);
+      border: 1px solid rgba(180, 142, 72, 0.4);
+      padding: 10px 12px;
+      border-radius: 10px;
+      line-height: 1.6;
     }
   </style>
 </head>
 <body>
   <div class="card">
+    <div class="ornament" aria-hidden="true">❦</div>
     <h1>網站瀏覽計數器</h1>
-    <div class="count" id="count">0</div>
+
+    <div class="count-wrap">
+      <span class="count-label">Total Visits</span>
+      <div class="count" id="count">0</div>
+    </div>
+
     <button id="countBtn" type="button">點擊計數 +1</button>
     <div class="status" id="status">載入中...</div>
     <div class="warning">
