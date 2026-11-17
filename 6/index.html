@@ -184,10 +184,11 @@
   </div>
 
   <script>
-    const COUNT_ENDPOINT = 'https://script.google.com/macros/s/你的部署ID/exec';
+    const COUNT_ENDPOINT = 'https://script.google.com/macros/s/AKfycbyHTpoiCiFOx0NznTWLHB_KdQWAHm9T5f0F9fR31OeYV1McQypvPeaQir7fkQdYXeGk/exec';
     const countEl = document.getElementById('count');
     const statusEl = document.getElementById('status');
     const countBtn = document.getElementById('countBtn');
+
 
     async function requestCount(action = 'get') {
       const url = `${COUNT_ENDPOINT}?action=${action}`;
