@@ -877,11 +877,12 @@
 
     function triggerAttack() {
       if (state.phase !== 'playing') return;
-      if (player.attackCooldown > 0) return;
+      if (player.rangedCooldown > 0 || player.attackCooldown > 0) return;
 
-      player.attackTimer = 180;
-      player.attackCooldown = 360;
-      spawnParticle(player.x + player.w + 8, player.y + player.h * 0.45, '#ffd86a', 10);
+      player.attackTimer = 160;
+      player.attackCooldown = 260;
+      spawnProjectile();
+      spawnParticle(player.x + player.w + 12, player.y + player.h * 0.5, '#ffd86a', 8);
       playSfx('bonus');
     }
 
@@ -922,28 +923,7 @@
     function updateAttack(dt) {
       player.attackTimer = Math.max(0, player.attackTimer - dt);
       player.attackCooldown = Math.max(0, player.attackCooldown - dt);
-
-      if (player.attackTimer <= 0) return;
-
-      const attackBox = {
-        x: player.x + player.w - 6,
-        y: player.y + 8,
-        w: 58,
-        h: player.h - 10
-      };
-
-      for (let i = monsters.length - 1; i >= 0; i--) {
-        const monster = monsters[i];
-        const monsterBox = { x: monster.x, y: monster.y, w: monster.w, h: monster.h };
-        if (rectOverlap(attackBox, monsterBox)) {
-          monsters.splice(i, 1);
-          state.bonusScore += 15;
-          refreshScore();
-          spawnParticle(monster.x + monster.w / 2, monster.y + monster.h / 2, '#7ef7a7', 18);
-          playSfx('bonus');
-          toast.textContent = '打到怪物！+15 分';
-        }
-      }
+      player.rangedCooldown = Math.max(0, player.rangedCooldown - dt);
     }
 
     function update(dt) {
@@ -1230,14 +1210,9 @@
           startGame();
         }
       }
-      if (code === 'KeyF' || code === 'KeyJ') {
+      if (code === 'KeyF' || code === 'KeyJ' || code === 'KeyR') {
         if (state.phase === 'playing') {
           triggerAttack();
-        }
-      }
-      if (code === 'KeyR') {
-        if (state.phase === 'playing') {
-          spawnProjectile();
         }
       }
       if (code === 'KeyP' || code === 'Escape') {
@@ -1246,9 +1221,6 @@
         } else if (state.phase === 'paused') {
           resumeGame();
         }
-      }
-      if (code === 'KeyR') {
-        startGame();
       }
     });
 
@@ -1316,7 +1288,7 @@
     attackButton.addEventListener('pointerdown', (event) => {
       event.preventDefault();
       if (state.phase === 'playing') {
-        spawnProjectile();
+        triggerAttack();
       }
     });
 
