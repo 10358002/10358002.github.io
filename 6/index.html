@@ -189,13 +189,12 @@
     const statusEl = document.getElementById('status');
     const countBtn = document.getElementById('countBtn');
 
-
     async function requestCount(action = 'get') {
-      const url = `${COUNT_ENDPOINT}?action=${action}`;
+      const url = `${COUNT_ENDPOINT}?action=${encodeURIComponent(action)}`;
       const response = await fetch(url, { method: 'GET' });
 
       if (!response.ok) {
-        throw new Error('無法取得計數資料');
+        throw new Error(`HTTP ${response.status}`);
       }
 
       const data = await response.json();
@@ -212,7 +211,7 @@
       });
 
       if (!response.ok) {
-        throw new Error('計數失敗');
+        throw new Error(`HTTP ${response.status}`);
       }
 
       const data = await response.json();
@@ -227,7 +226,7 @@
       } catch (error) {
         countEl.textContent = 'ERR';
         statusEl.textContent = '請檢查 GAS Web App URL 是否正確';
-        console.error(error);
+        console.error('loadCount error:', error);
       }
     }
 
@@ -239,7 +238,7 @@
         statusEl.textContent = '計數成功';
       } catch (error) {
         statusEl.textContent = '計數失敗，請確認後端設定';
-        console.error(error);
+        console.error('incrementCount error:', error);
       }
     });
 

@@ -24,10 +24,32 @@ function resetCount() {
   return 0;
 }
 
+function getActionFromRequest(e, fallback) {
+  if (e && e.parameter && e.parameter.action) {
+    return String(e.parameter.action).toLowerCase();
+  }
+
+  try {
+    const raw = e && e.postData && e.postData.contents ? e.postData.contents : '';
+    if (!raw) {
+      return fallback;
+    }
+
+    const payload = JSON.parse(raw);
+    if (payload && payload.action) {
+      return String(payload.action).toLowerCase();
+    }
+  } catch (err) {
+    // ignore parse error and fallback below
+  }
+
+  return fallback;
+}
+
 function handleAction(action) {
   initializeCounter();
 
-  switch (action) {
+  switch ((action || 'get').toLowerCase()) {
     case 'increment':
       return { success: true, count: incrementCount(), action: 'increment' };
     case 'reset':
@@ -38,28 +60,20 @@ function handleAction(action) {
   }
 }
 
-function doGet(e) {
-  const action = (e && e.parameter && e.parameter.action) || 'get';
-  const result = handleAction(action);
-
+function jsonResponse(obj) {
   return ContentService
-    .createTextOutput(JSON.stringify(result))
+    .createTextOutput(JSON.stringify(obj))
     .setMimeType(ContentService.MimeType.JSON);
 }
 
-function doPost(e) {
-  let payload = {};
-
-  try {
-    payload = JSON.parse(e && e.postData && e.postData.contents ? e.postData.contents : '{}');
-  } catch (err) {
-    payload = {};
-  }
-
-  const action = payload.action || 'increment';
+function doGet(e) {
+  const action = getActionFromRequest(e, 'get');
   const result = handleAction(action);
+  return jsonResponse(result);
+}
 
-  return ContentService
-    .createTextOutput(JSON.stringify(result))
-    .setMimeType(ContentService.MimeType.JSON);
+function doPost(e) {
+  const action = getActionFromRequest(e, 'increment');
+  const result = handleAction(action);
+  return jsonResponse(result);
 }
