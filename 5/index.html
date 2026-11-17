@@ -431,25 +431,15 @@
     }
 
     function tryLockLandscape() {
-      if (!screen || !screen.orientation || typeof screen.orientation.lock !== 'function') return;
-      if (window.innerHeight <= window.innerWidth) return;
-      screen.orientation.lock('landscape').catch(() => {});
+      // 不強制轉向或全螢幕，避免畫面過大導致無法遊玩
     }
 
     function tryEnterFullscreen() {
-      const root = document.documentElement;
-      const fs = root.requestFullscreen || root.webkitRequestFullscreen || root.mozRequestFullScreen || root.msRequestFullscreen;
-      const alreadyFullscreen = !!(document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement);
-      if (!fs || alreadyFullscreen) return;
-      try {
-        fs.call(root).catch(() => {});
-      } catch (error) {
-        // ignore unsupported/fullscreen-blocked browsers
-      }
+      // 不啟用全螢幕，保留正常瀏覽器視窗大小
     }
 
     function isPortraitMode() {
-      return window.innerHeight > window.innerWidth;
+      return false;
     }
 
     const state = {
@@ -664,10 +654,6 @@
     }
 
     function startGame() {
-      if (isPortraitMode()) {
-        toast.textContent = '請將手機轉成橫向再開始';
-        return;
-      }
       ensureAudio();
       stopMusic();
       resetGamePlayState();
@@ -677,8 +663,6 @@
       playSfx('start');
       if (musicEnabled) startMusic();
       lastTime = performance.now();
-      tryLockLandscape();
-      tryEnterFullscreen();
     }
 
     function pauseGame() {
@@ -691,16 +675,10 @@
 
     function resumeGame() {
       if (state.phase !== 'paused') return;
-      if (isPortraitMode()) {
-        toast.textContent = '請轉成橫向再繼續';
-        return;
-      }
       state.phase = 'playing';
       hideOverlay();
       toast.textContent = '繼續遊戲';
       if (musicEnabled) startMusic();
-      tryLockLandscape();
-      tryEnterFullscreen();
     }
 
     function endGame() {
@@ -1261,8 +1239,6 @@
       if (code === 'KeyR') {
         startGame();
       }
-      tryLockLandscape();
-      tryEnterFullscreen();
     });
 
     document.addEventListener('keyup', (event) => {
@@ -1276,8 +1252,6 @@
     canvas.addEventListener('pointerdown', (event) => {
       event.preventDefault();
       ensureAudio();
-      tryLockLandscape();
-      tryEnterFullscreen();
       if (state.phase === 'playing') {
         triggerJump();
         return;
@@ -1338,7 +1312,6 @@
     window.addEventListener('resize', () => {
       setCanvasSize();
       updateHUD();
-      tryLockLandscape();
     });
 
     function start() {
@@ -1348,7 +1321,6 @@
       updateMusicButton();
       showOverlay('開始遊戲', '避開障礙物，按 F 攻擊怪物！', '開始遊戲', '再來一次', false);
       state.phase = 'menu';
-      tryLockLandscape();
       requestAnimationFrame(gameLoop);
     }
 
