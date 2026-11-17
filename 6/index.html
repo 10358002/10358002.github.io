@@ -189,16 +189,25 @@
     const statusEl = document.getElementById('status');
     const countBtn = document.getElementById('countBtn');
 
+    function showMessage(message) {
+      statusEl.textContent = message;
+    }
+
     async function requestCount(action = 'get') {
       const url = `${COUNT_ENDPOINT}?action=${encodeURIComponent(action)}`;
       const response = await fetch(url, { method: 'GET' });
 
+      const text = await response.text();
+
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
+        throw new Error(`HTTP ${response.status}: ${text}`);
       }
 
-      const data = await response.json();
-      return data;
+      try {
+        return JSON.parse(text);
+      } catch (err) {
+        throw new Error(`JSON parse error: ${text}`);
+      }
     }
 
     async function incrementCount() {
@@ -210,34 +219,39 @@
         body: JSON.stringify({ action: 'increment' })
       });
 
+      const text = await response.text();
+
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
+        throw new Error(`HTTP ${response.status}: ${text}`);
       }
 
-      const data = await response.json();
-      return data;
+      try {
+        return JSON.parse(text);
+      } catch (err) {
+        throw new Error(`JSON parse error: ${text}`);
+      }
     }
 
     async function loadCount() {
       try {
         const data = await requestCount('get');
         countEl.textContent = Number(data.count || 0);
-        statusEl.textContent = '資料已更新';
+        showMessage('資料已更新');
       } catch (error) {
         countEl.textContent = 'ERR';
-        statusEl.textContent = '請檢查 GAS Web App URL 是否正確';
+        showMessage('GAS 設定錯誤：' + error.message);
         console.error('loadCount error:', error);
       }
     }
 
     countBtn.addEventListener('click', async () => {
       try {
-        statusEl.textContent = '計數中...';
+        showMessage('計數中...');
         const data = await incrementCount();
         countEl.textContent = Number(data.count || 0);
-        statusEl.textContent = '計數成功';
+        showMessage('計數成功');
       } catch (error) {
-        statusEl.textContent = '計數失敗，請確認後端設定';
+        showMessage('後端設定錯誤：' + error.message);
         console.error('incrementCount error:', error);
       }
     });

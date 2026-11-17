@@ -24,40 +24,19 @@ function resetCount() {
   return 0;
 }
 
-function getActionFromRequest(e, fallback) {
-  if (e && e.parameter && e.parameter.action) {
-    return String(e.parameter.action).toLowerCase();
-  }
-
-  try {
-    const raw = e && e.postData && e.postData.contents ? e.postData.contents : '';
-    if (!raw) {
-      return fallback;
-    }
-
-    const payload = JSON.parse(raw);
-    if (payload && payload.action) {
-      return String(payload.action).toLowerCase();
-    }
-  } catch (err) {
-    // ignore parse error and fallback below
-  }
-
-  return fallback;
-}
-
 function handleAction(action) {
   initializeCounter();
+  const type = String(action || 'get').toLowerCase();
 
-  switch ((action || 'get').toLowerCase()) {
-    case 'increment':
-      return { success: true, count: incrementCount(), action: 'increment' };
-    case 'reset':
-      return { success: true, count: resetCount(), action: 'reset' };
-    case 'get':
-    default:
-      return { success: true, count: getCount(), action: 'get' };
+  if (type === 'increment') {
+    return { success: true, count: incrementCount(), action: 'increment' };
   }
+
+  if (type === 'reset') {
+    return { success: true, count: resetCount(), action: 'reset' };
+  }
+
+  return { success: true, count: getCount(), action: 'get' };
 }
 
 function jsonResponse(obj) {
@@ -67,13 +46,20 @@ function jsonResponse(obj) {
 }
 
 function doGet(e) {
-  const action = getActionFromRequest(e, 'get');
-  const result = handleAction(action);
-  return jsonResponse(result);
+  const action = (e && e.parameter && e.parameter.action) || 'get';
+  return jsonResponse(handleAction(action));
 }
 
 function doPost(e) {
-  const action = getActionFromRequest(e, 'increment');
-  const result = handleAction(action);
-  return jsonResponse(result);
+  try {
+    const payload = JSON.parse((e && e.postData && e.postData.contents) || '{}');
+    const action = (payload && payload.action) || 'increment';
+    return jsonResponse(handleAction(action));
+  } catch (err) {
+    return jsonResponse({
+      success: false,
+      error: 'Invalid JSON payload',
+      details: String(err)
+    });
+  }
 }
