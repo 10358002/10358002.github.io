@@ -120,7 +120,7 @@ function showNextYear(){
  if(!state.alive)return;if(state.age===18&&state.career==='未成年'){clearInterval(timer);showEvent('career');return}
  if(state.age>=80&&Math.random()<Math.min(.18,(state.age-79)*.012)){die('時光耗盡，安詳地在家族祠堂中離世');return}
  state.age++;state.turn++;
- const lifeMod=rand(-2,2);state.health=clamp(state.health+lifeMod);state.knowledge=clamp(state.knowledge+(state.age<25?rand(0,2):rand(-1,1)));state.wealth=clamp(state.wealth+rand(-2,2));
+ const lifeMod=rand(-2,2);state.health=clamp(state.health+lifeMod);state.knowledge=clamp(state.knowledge+(state.age<25?rand(0,2):rand(-1,1)));state.wealth=clamp(state.wealth+rand(-2,2));state.houseWealth=Math.max(0,(state.houseWealth||0)+rand(-3,3));
  if(state.age===18&&!state.married&&Math.random()<.55){clearInterval(timer);showEvent('marriage');return}
  if(Math.random()<.012||state.age>65&&Math.random()<.035){clearInterval(timer);randomDeath();return}
  const chance=rand(1,100);let ev;
