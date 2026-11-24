@@ -65,7 +65,7 @@ function startGame(){
  const name=$('nameInput').value.trim()||names[rand(0,names.length-1)];
  const legitimate=Math.random()<.68;
  const siblings=rand(0,5); const stateCount=rand(35,95);
- state.house=houseId;state.name=name;state.gender=$('genderInput').value;state.legitimate=legitimate;state.age=0;state.health=clamp(h.base.health+rand(-8,8));state.knowledge=clamp(h.base.knowledge+rand(-8,8));state.wealth=clamp(h.base.wealth+rand(-12,10));state.relation=clamp(h.base.relation+rand(-10,10));state.beauty=clamp(h.base.beauty+rand(-12,12));state.career='未成年';state.power=stateCount;state.kingPower=rand(25,85);state.alliances=[];state.siblings=siblings;state.married=false;state.children=0;state.alive=true;state.turn=0;state.legacy=[];state.acted=false;
+ state.house=houseId;state.name=name;state.gender=$('genderInput').value;state.legitimate=legitimate;state.age=0;state.health=clamp(h.base.health+rand(-8,8));state.knowledge=clamp(h.base.knowledge+rand(-8,8));state.wealth=clamp(h.base.wealth+rand(-12,10));state.relation=clamp(h.base.relation+rand(-10,10));state.beauty=clamp(h.base.beauty+rand(-12,12));state.career='未成年';state.power=stateCount;state.kingPower=rand(25,85);state.alliances=[];state.siblings=siblings;state.married=false;state.children=0;state.alive=true;state.turn=0;state.legacy=[];state.acted=false;state.finalEndingChecked=false;
  state.houses={};Object.entries(HOUSE_TEMPLATES).forEach(([id,t])=>state.houses[id]={power:rand(20,88),relation:rand(-40,40)});state.houses[houseId].power=stateCount;
  $('setupModal').classList.add('hidden');clearInterval(timer);timer=null;speed=0;updateSpeedButtons();render();showEvent('birth');saveGame(false);
 }
@@ -107,18 +107,43 @@ function showNextYear(){
  const chance=rand(1,100);let ev;
  if(chance<=12)ev='undead';else if(chance<=24)ev='feast';else if(chance<=36)ev='court';else if(chance<=48)ev='battle';else if(chance<=60)ev='marriage';else if(chance<=72)ev='alliance';else if(chance<=84)ev='wealth';else ev='mystery';
  randomEvent(ev);
- render();if(state.age>=90)randomEnd();
+ render();
+ saveGame(false);
+ if(state.age>=90&&!state.finalEndingChecked){state.finalEndingChecked=true;if(Math.random()<.28)randomEnd();}
 }
 
-function randomEvent(ev){const story=$('story');let title='',text='',icon='';
- if(ev==='undead'){icon='☠';title='活屍南侵';const severity=rand(1,100);text=`北方烽火連天，活屍軍團突襲一座邊境城鎮，強度為${severity}/100。城門在夜裡發出怪異撞擊聲。`;addLog(`活屍入侵，威脅等級${severity}。`);story.innerHTML=eventHTML(icon,title,text,[severity>65?[`率領軍隊迎戰`,`有勇無謀也許能挽救城民`,()=>{battleUndead(severity)}]:[`派兵支援北境`,`軍心與家族聲望可能提升`,()=>{battleUndead(severity)}],[`封鎖城門等待援軍`,`較安全，但人際可能受損`,()=>{closeGates()}],[`獻祭一名俘虜換取情報`,`只有年老的歷史會記得這筆交易`,()=>{darkDeal()}]]);}
- else if(ev==='feast'){icon='🍷';title='宮廷盛宴';text='王座空懸之夜，十二家族齊聚宴席。一杯毒酒、一段流言，或一場新婚都可能改變局勢。';addLog('參加宮廷盛宴。');story.innerHTML=eventHTML(icon,title,text,[`與敵對家族談笑`,`人際可能提升或被試探`,()=>{socialEvent()}],[`向王宮貴族獻納珍寶`,`財富下降，聲望與盟友提升`,()=>{bribeCourt()}],[`藏於宴會長廊窺探陰謀`,`知識提升，健康或人際可能受損`,()=>{spyEvent()}]]);}
- else if(ev==='court'){icon='📜';title='朝廷謁見';text='朝臣要求你表態：支持現任攝政，或提出新的繼承候選人。每個選擇都會留下歷史。';addLog('接受朝廷謁見。');story.innerHTML=eventHTML(icon,title,text,[`公開效忠攝政王`,`人際提升，獲得一點官場資源`,()=>{state.relation+=8;state.power+=5;yearResume('你跪在攝政王前，成為其公開盟友。')}],[`暗示自己有繼承資格`,`勢力提升，但容易樹敵`,()=>{state.power+=12;enemyRandom();yearResume('你開始讓朝臣思考王座是否也該有你的席位。')}],[`保持中立離席`,`安全但失去機會`,()=>{state.relation-=3;yearResume('你選擇沉默，沉默在宮廷中從不等於無形。')}]]);}
- else if(ev==='battle'){icon='⚔';title='家族戰火';const enemy=randomHouse();text=`${HOUSE_TEMPLATES[enemy].name}與你在一座過境要塞發生衝突。軍旗在雨中飄動，沒有一個人確定誰先拔劍。`;addLog(`與${HOUSE_TEMPLATES[enemy].name}在要塞衝突。`);state._enemy=enemy;story.innerHTML=eventHTML(icon,title,text,[`親自領軍突擊`,`健康與勢力將受結果影響`,()=>{chargeBattle()}],[`發出金幣與糧草支援`,`財富下降，軍心可能提升`,()=>{supplyBattle()}],[`秘密聯絡敵方將領`,`可能成立緊急停戰或遭到背叛`,()=>{negotiateBattle()}]]);}
- else if(ev==='marriage'&&state.age>=18&&!state.married){icon='💍';title='婚約來臨';text='一封由蠟封印的書信抵達。對方家族願意以婚姻換取你的忠誠，條件寫得像詩，內容卻像戰書。';addLog('收到婚姻與聯姻機會。');story.innerHTML=eventHTML(icon,title,text,[`接受聯姻`,`人際提升，可能增加盟友或仇敵`,()=>{marryChoice(true)}],[`拒絕並保持自由`,`避免束縛，家族聲望可能下降`,()=>{marryChoice(false)}]]);}
- else if(ev==='alliance'){icon='🤝';title='盟約之手';const ally=randomHouse();text=`一名來自${HOUSE_TEMPLATES[ally].name}的使者帶來盟約。他的香水仍帶著異國的霧雨與血腥。`;addLog(`收到來自${HOUSE_TEMPLATES[ally].name}的盟約。`);state._ally=ally;story.innerHTML=eventHTML(icon,title,text,[`簽署血盟`,`獲得盟友，但可能遭到背叛`,()=>{makeAlliance()}],[`索取更多財寶才簽約`,`財富與關係將受到考驗`,()=>{allianceForPrice()}],[`拒絕並驅逐使者`,`關係惡化`,()=>{state.houses[ally].relation-=20;yearResume('使者在城門外折斷盟約卷軒，你們成為公開的敵人。')}]]);}
- else if(ev==='wealth'){icon='⚖';title='家族經濟危機';text='糧倉與金庫的數字不相吻合。一位老臣的手抖得像冬天的樹枝，他只說出一半真相。';addLog('家族陷入經濟危機。');story.innerHTML=eventHTML(icon,title,text,[`公開追查帳目`,`知識提升，財富可能恢復',()=>{investigateAccount()}],[`向商人加稅`,`財富提升，人際下降',()=>{state.wealth+=10;state.relation-=8;yearResume('商隊仍然會來，只是再也不會帶任何笑容。')}],[`向龍家借貸`,`短期財富提升，日後債務會變成枷鎖',()=>{state.wealth+=16;state.legacy.push('從龍家借貸。');yearResume('借來的金幣閃著異光，利息卻以人命計算。')}]]);}
- else{icon=['🕯','🦉','🌙','🗝'][rand(0,3)];title='命運的低語';text=['一位盲僧預言你會死在一場宴席中。','一名死者的影子在你房間裡停了一整夜。','你找到了一封預告王座更換的匿名信。','遠方傳來一頭巨龍落在雪中的聲音。'][rand(0,3)];addLog('遭遇一段神祕事件。');story.innerHTML=eventHTML(icon,title,text,[`追查真相`,`知識提升，可能觸怒秘密勢力`,()=>{state.knowledge+=8;state.relation-=4;yearResume('真相沒有名字，但它開始認出你。')}],[`裝作從未發現`,`安全度過未知之夜`,()=>{yearResume('你選擇閉上眼，命運便暫時繞過你的房門。')}],[`向山羊家求問惡魔契約`,`以未知代價改變未來',()=>{demonContract()}]]);}
+function randomEvent(ev){
+ const story=$('story');
+ let icon='',title='',text='',choices=[];
+ if(ev==='undead'){
+  icon='☠';title='活屍南侵';const severity=rand(1,100);
+  text=`北方烽火連天，活屍軍團突襲一座邊境城鎮，強度為${severity}/100。城門在夜裡發出怪異撞擊聲。`;
+  addLog(`活屍入侵，威脅等級${severity}。`);
+  if(severity>65){choices.push(['率領軍隊迎戰','有勇無謀也許能挽救城民',()=>battleUndead(severity)])}else{choices.push(['派兵支援北境','軍心與家族聲望可能提升',()=>battleUndead(severity)])}
+  choices.push(['封鎖城門等待援軍','較安全，但人際可能受損',()=>closeGates()],['獻祭一名俘虜換取情報','只有年老的歷史會記得這筆交易',()=>darkDeal()]);
+ }else if(ev==='feast'){
+  icon='🍷';title='宮廷盛宴';text='王座空懸之夜，十二家族齊聚宴席。一杯毒酒、一段流言，或一場新婚都可能改變局勢。';addLog('參加宮廷盛宴。');
+  choices=[['與敵對家族談笑','人際可能提升或被試探',()=>socialEvent()],['向王宮貴族獻納珍寶','財富下降，聲望與盟友提升',()=>bribeCourt()],['藏於宴會長廊窺探陰謀','知識提升，健康或人際可能受損',()=>spyEvent()]];
+ }else if(ev==='court'){
+  icon='📜';title='朝廷謁見';text='朝臣要求你表態：支持現任攝政，或提出新的繼承候選人。每個選擇都會留下歷史。';addLog('接受朝廷謁見。');
+  choices=[['公開效忠攝政王','人際提升，獲得一點官場資源',()=>{state.relation+=8;state.power+=5;yearResume('你跪在攝政王前，成為其公開盟友。')}],['暗示自己有繼承資格','勢力提升，但容易樹敵',()=>{state.power+=12;enemyRandom();yearResume('你開始讓朝臣思考王座是否也該有你的席位。')}],['保持中立離席','安全但失去機會',()=>{state.relation-=3;yearResume('你選擇沉默，沉默在宮廷中從不等於無形。')}]];
+ }else if(ev==='battle'){
+  icon='⚔';title='家族戰火';const enemy=randomHouse();text=`${HOUSE_TEMPLATES[enemy].name}與你在一座過境要塞發生衝突。軍旗在雨中飄動，沒有一個人確定誰先拔劍。`;addLog(`與${HOUSE_TEMPLATES[enemy].name}在要塞衝突。`);state._enemy=enemy;
+  choices=[['親自領軍突擊','健康與勢力將受結果影響',()=>chargeBattle()],['發出金幣與糧草支援','財富下降，軍心可能提升',()=>supplyBattle()],['秘密聯絡敵方將領','可能成立緊急停戰或遭到背叛',()=>negotiateBattle()]];
+ }else if(ev==='marriage'&&state.age>=18&&!state.married){
+  icon='💍';title='婚約來臨';text='一封由蠟封印的書信抵達。對方家族願意以婚姻換取你的忠誠，條件寫得像詩，內容卻像戰書。';addLog('收到婚姻與聯姻機會。');
+  choices=[['接受聯姻','人際提升，可能增加盟友或仇敵',()=>marryChoice(true)],['拒絕並保持自由','避免束縛，家族聲望可能下降',()=>marryChoice(false)]];
+ }else if(ev==='alliance'){
+  icon='🤝';title='盟約之手';const ally=randomHouse();text=`一名來自${HOUSE_TEMPLATES[ally].name}的使者帶來盟約。他的香水仍帶著異國的霧雨與血腥。`;addLog(`收到來自${HOUSE_TEMPLATES[ally].name}的盟約。`);state._ally=ally;
+  choices=[['簽署血盟','獲得盟友，但可能遭到背叛',()=>makeAlliance()],['索取更多財寶才簽約','財富與關係將受到考驗',()=>allianceForPrice()],['拒絕並驅逐使者','關係惡化',()=>{state.houses[ally].relation-=20;yearResume('使者在城門外折斷盟約卷軸，你們成為公開的敵人。')}]];
+ }else if(ev==='wealth'){
+  icon='⚖';title='家族經濟危機';text='糧倉與金庫的數字不相吻合。一位老臣的手抖得像冬天的樹枝，他只說出一半真相。';addLog('家族陷入經濟危機。');
+  choices=[['公開追查帳目','知識提升，財富可能恢復',()=>investigateAccount()],['向商人加稅','財富提升，人際下降',()=>{state.wealth+=10;state.relation-=8;yearResume('商隊仍然會來，只是再也不會帶任何笑容。')}],['向龍家借貸','短期財富提升，日後債務會變成枷鎖',()=>{state.wealth+=16;state.legacy.push('從龍家借貸。');yearResume('借來的金幣閃著異光，利息卻以人命計算。')}]];
+ }else{
+  icon=['🕯','🦉','🌙','🗝'][rand(0,3)];title='命運的低語';text=['一位盲僧預言你會死在一場宴席中。','一名死者的影子在你房間裡停了一整夜。','你找到了一封預告王座更換的匿名信。','遠方傳來一頭巨龍落在雪中的聲音。'][rand(0,3)];addLog('遭遇一段神祕事件。');
+  choices=[['追查真相','知識提升，可能觸怒秘密勢力',()=>{state.knowledge+=8;state.relation-=4;yearResume('真相沒有名字，但它開始認出你。')}],['裝作從未發現','安全度過未知之夜',()=>yearResume('你選擇閉上眼，命運便暫時繞過你的房門。')],['向山羊家求問惡魔契約','以未知代價改變未來',()=>demonContract()]];
+ }
+ story.innerHTML=eventHTML(icon,title,text,choices);
  render();
 }
 
@@ -155,9 +180,11 @@ function die(cause){stopTimer();state.alive=false;clearInterval(timer);$('chapte
 function randomEnd(){const possible=['你坐上鐵王座，卻發現王座會在睡夢中改變位置。','你放棲王位，帶著少數書頁遠行。','你被活屍軍團推為守夜者之王。','你的家族背叛你，但你逃出城外建立新王國。','你成為十二家族共同承認的仲裁者。','巨龍選擇了你，你駕龍離開大陸。','你被封在冰與石的墳墓中，仍能夢見王座。'];die(possible[rand(0,possible.length-1)])}
 
 function saveGame(show=true){try{localStorage.setItem('ironThroneSagaSave',JSON.stringify(state));if(show)alert('人生進度已儲存於此瀏覽器')}catch(e){}}
-function loadGame(){try{const s=JSON.parse(localStorage.getItem('ironThroneSagaSave'));if(s&&s.name&&s.house){Object.assign(state,s);$('setupModal').classList.add('hidden');render();$('story').innerHTML=`<div class="event-icon">◈</div><h2>命運從中斷處恢復</h2><p>${state.name}已經活到${state.age}歲，正在等待下一個選擇。</p><div class="choices"><button class="choice" onclick="resumeLife()">繼續人生</button></div>`}}catch(e){}}
-
-$('startBtn').onclick=startGame;$('saveBtn').onclick=()=>saveGame(true);$('resetBtn').onclick=()=>{if(confirm('確定要重新降生並清除目前人生？'))location.reload()};
+function loadGame(){try{const s=JSON.parse(localStorage.getItem('ironThroneSagaSave'));if(s&&s.name&&s.house){Object.assign(state,s);$('setupModal').classList.add('hidden');render();$('story').innerHTML=`<div class="event-icon">◈</div><h2>命運從中斷處恢復</h2><p>${state.name}已經活到${state.age}歲，正在等待下一個選擇。</p><div class="choices"><button class="choice" onclick="resumeLife()">繼續人生</button></div>`;}else{alert('目前沒有可載入的存檔')}}catch(e){alert('存檔讀取失敗')}}
+$('startBtn').onclick=startGame;
+$('loadBtn').onclick=loadGame;
+$('saveBtn').onclick=()=>saveGame(true);
+$('resetBtn').onclick=()=>{if(confirm('確定要重新降生並清除目前人生？')){localStorage.removeItem('ironThroneSagaSave');location.reload()}};
 initHousePicker();
 </script>
 </body>
