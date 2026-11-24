@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>鐵王座之歌</title>
+  <style>
+    :root{--bg:#090c12;--panel:#10151f;--panel2:#151c28;--gold:#c7a65a;--gold2:#80652c;--text:#ece7da;--muted:#aaa49a;--red:#9b3d38;--green:#6e9e78;--line:rgba(199,166,90,.24)}
+    *{box-sizing:border-box} body{margin:0;min-height:100vh;background:radial-gradient(circle at top,#1c2533 0,#0b0f17 42%,#07090d 100%);color:var(--text);font-family:"Microsoft JhengHei","Noto Sans TC",serif}
+    body:before{content:"";position:fixed;inset:0;pointer-events:none;background:linear-gradient(120deg,rgba(199,166,90,.03),transparent 35%,rgba(199,166,90,.02));}
+    button,input,select{font-family:inherit}.hidden{display:none!important}
+    .shell{max-width:1180px;margin:auto;padding:18px}.topbar{height:76px;display:flex;align-items:center;justify-content:space-between;border:1px solid var(--line);border-radius:16px;padding:12px 18px;background:rgba(12,16,24,.88);box-shadow:0 14px 38px rgba(0,0,0,.28)}
+    .brand{display:flex;align-items:center;gap:12px}.sigil{width:48px;height:48px;display:grid;place-items:center;border:1px solid var(--gold);border-radius:50%;color:var(--gold);font-size:26px;box-shadow:inset 0 0 18px rgba(199,166,90,.08)}
+    .brand h1{font-size:20px;margin:0;letter-spacing:.12em}.brand small{color:var(--muted);letter-spacing:.12em}.top-actions{display:flex;gap:8px}.icon-btn,.gold-btn,.plain-btn{border:1px solid var(--gold2);border-radius:9px;color:var(--text);background:#151b27;padding:9px 12px;cursor:pointer}.gold-btn{background:linear-gradient(135deg,#baa05c,#80672e);color:#11151c;font-weight:800}.plain-btn{background:transparent}.icon-btn:hover,.plain-btn:hover,.gold-btn:hover{filter:brightness(1.12)}
+    .game-grid{display:grid;grid-template-columns:270px 1fr 280px;gap:14px;margin-top:14px}.panel{border:1px solid var(--line);border-radius:14px;background:rgba(16,21,31,.94);box-shadow:0 10px 30px rgba(0,0,0,.16)}
+    .profile{text-align:center;padding:16px}.portrait{width:118px;height:118px;margin:0 auto 12px;border-radius:50%;display:grid;place-items:center;border:2px solid var(--gold);background:radial-gradient(circle at 50% 35%,#3d4655,#171d27 65%);font-size:56px}.profile h2{margin:4px 0 2px;font-size:20px}.house-name{color:var(--gold);font-weight:800}.profile-status{color:var(--muted);font-size:13px;line-height:1.8}
+    .stats{display:grid;gap:9px;padding:0 14px 14px}.stat{display:grid;grid-template-columns:58px 1fr 32px;align-items:center;gap:8px;font-size:12px}.bar{height:7px;border-radius:99px;background:#292f38;overflow:hidden}.bar i{display:block;height:100%;background:linear-gradient(90deg,#9f8343,#d7bf7b);transition:width .35s}.stat b{text-align:right}
+    .main-panel{min-height:560px;display:flex;flex-direction:column}.chapter-head{display:flex;justify-content:space-between;align-items:center;padding:14px 18px;border-bottom:1px solid var(--line)}.chapter-head strong{color:var(--gold);letter-spacing:.08em}.age-pill{padding:6px 10px;border:1px solid var(--line);border-radius:99px;color:var(--muted);font-size:12px}.story{flex:1;padding:22px;overflow:hidden}.event-icon{width:58px;height:58px;border:1px solid var(--gold2);border-radius:14px;display:grid;place-items:center;color:var(--gold);font-size:30px;margin-bottom:14px}.story h2{margin:0 0 8px;font-size:22px}.story p{line-height:1.9;color:#d1ccbf;margin:0 0 16px}.choices{display:grid;gap:9px}.choice{width:100%;text-align:left;padding:12px 14px;border:1px solid rgba(199,166,90,.22);border-radius:10px;background:#151b25;color:var(--text);cursor:pointer}.choice:hover{border-color:var(--gold);background:#1a2230}.choice small{display:block;color:var(--muted);margin-top:4px}.controls{display:flex;justify-content:space-between;align-items:center;padding:12px 18px;border-top:1px solid var(--line)}.speed{display:flex;gap:5px}.speed button{width:38px;height:34px;border:1px solid var(--line);background:#151b25;color:var(--muted);border-radius:7px;cursor:pointer}.speed button.active{border-color:var(--gold);color:var(--gold)}
+    .side-panel{padding:14px}.side-panel h3{font-size:13px;margin:0 0 10px;color:var(--gold);letter-spacing:.1em}.house-list{display:grid;gap:7px}.house-row{display:grid;grid-template-columns:32px 1fr 42px;align-items:center;gap:8px;padding:7px;border-radius:8px;background:#151a23;font-size:12px}.house-row.active{border:1px solid var(--gold2)}.house-row .mini{width:28px;height:28px;border:1px solid var(--line);border-radius:50%;display:grid;place-items:center}.power{height:4px;background:#303642;border-radius:99px;margin-top:4px}.power i{height:100%;display:block;border-radius:99px;background:var(--gold)}.timeline{margin-top:14px}.log{max-height:250px;overflow:auto;display:grid;gap:7px}.log-item{font-size:12px;line-height:1.5;color:var(--muted);border-left:2px solid #554823;padding-left:8px}.log-item b{color:#d7c886}
+    .modal-backdrop{position:fixed;z-index:20;inset:0;background:rgba(4,6,9,.88);display:grid;place-items:center;padding:16px}.setup{width:min(720px,100%);max-height:92vh;overflow:auto;border:1px solid var(--gold2);border-radius:18px;background:#10151e;padding:22px;box-shadow:0 30px 80px #000}.setup h2{margin:0 0 6px;text-align:center;color:var(--gold);letter-spacing:.12em}.setup-sub{text-align:center;color:var(--muted);font-size:13px;margin-bottom:18px}.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.field label{display:block;font-size:12px;color:var(--muted);margin-bottom:6px}.field input,.field select{width:100%;height:42px;border:1px solid var(--line);border-radius:8px;background:#171d28;color:var(--text);padding:0 10px}.house-picker{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:14px 0}.house-card{border:1px solid var(--line);border-radius:10px;background:#151b25;padding:10px 6px;text-align:center;cursor:pointer}.house-card.selected{border-color:var(--gold);box-shadow:inset 0 0 18px rgba(199,166,90,.08)}.house-card .hs{font-size:23px}.house-card b{display:block;font-size:12px;margin-top:4px}.setup-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:14px}.result-box{text-align:center;padding:24px}.result-box .ending{font-size:54px}.result-box h2{color:var(--gold);margin:10px 0}.result-box p{color:var(--muted);line-height:1.8}
+    @media(max-width:900px){.game-grid{grid-template-columns:220px 1fr}.side-panel{grid-column:1/-1}.house-list{grid-template-columns:repeat(3,1fr)}}
+    @media(max-width:650px){.shell{padding:8px}.topbar{height:auto}.brand h1{font-size:16px}.top-actions .plain-btn{display:none}.game-grid{grid-template-columns:1fr}.main-panel{grid-row:1}.profile{grid-row:2}.side-panel{grid-row:3}.portrait{width:88px;height:88px;font-size:42px}.house-picker{grid-template-columns:repeat(3,1fr)}.form-grid{grid-template-columns:1fr}.story{padding:16px}.controls{gap:8px}.speed button{width:34px}.house-list{grid-template-columns:repeat(2,1fr)}}
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar"><div class="brand"><div class="sigil" id="topSigil">♛</div><div><h1>鐵王座之歌</h1><small>THE FATE OF TWELVE HOUSES</small></div></div><div class="top-actions"><button class="plain-btn" id="saveBtn">儲存</button><button class="plain-btn" id="resetBtn">新生</button></div></header>
+    <main class="game-grid">
+      <aside class="panel profile"><div class="portrait" id="portrait">♚</div><h2 id="playerName">未出生</h2><div class="house-name" id="playerHouse">—</div><div class="profile-status" id="birthInfo">等待命運裁決</div><div class="stats" id="stats"></div></aside>
+      <section class="panel main-panel"><div class="chapter-head"><strong id="chapterTitle">開局</strong><div class="age-pill" id="agePill">出生前</div></div><div class="story" id="story"><div class="event-icon">♛</div><h2>命運尚未降臨</h2><p>十二大家族競逐王座，國王已死。選定你的姓名、性別與家族，開始一段無法預測的人生。</p></div><div class="controls"><div class="speed"><button data-speed="0" class="active">Ⅱ</button><button data-speed="1">1×</button><button data-speed="2">2×</button><button data-speed="5">5×</button></div><button class="gold-btn hidden" id="continueBtn">繼續人生</button></div></section>
+      <aside class="panel side-panel"><h3>七大勢力與十二家族</h3><div class="house-list" id="houseList"></div><div class="timeline"><h3>人生記事</h3><div class="log" id="log"></div></div></aside>
+    </main>
+  </div>
+
+  <div class="modal-backdrop" id="setupModal"><div class="setup"><h2>選擇你的血脈</h2><div class="setup-sub">國王之死只是一場序幕，王座從未安穩。</div><div class="form-grid"><div class="field"><label>角色姓名</label><input id="nameInput" maxlength="12" value="艾德"></div><div class="field"><label>性別</label><select id="genderInput"><option>男性</option><option>女性</option><option>無名性別</option></select></div></div><div class="house-picker" id="housePicker"></div><div class="setup-actions"><button class="plain-btn" id="loadBtn">載入存檔</button><button class="gold-btn" id="startBtn">降生於世</button></div></div></div>
+
+<script>
+const HOUSE_TEMPLATES={
+ wolf:{name:'狼之守界家',icon:'🐺',base:{knowledge:52,health:78,wealth:45,relation:58,beauty:48},trait:'北境守界者，善於狩獵、戰爭與抵禦活屍',bonus:'活屍入侵時健康與知識加成'},
+ deer:{name:'鹿之中央家',icon:'🦌',base:{knowledge:48,health:68,wealth:70,relation:65,beauty:60},trait:'中央貴族，軍隊龐大且領地富庶',bonus:'財富與人際較高'},
+ lion:{name:'獅之王室家',icon:'🦁',base:{knowledge:55,health:65,wealth:92,relation:62,beauty:72},trait:'王室血統，酷愛爭奪金錢與權位',bonus:'初始財富與王位聲望極高'},
+ dragon:{name:'龍之昔王家',icon:'🐉',base:{knowledge:78,health:62,wealth:68,relation:45,beauty:82},trait:'昔日王族，血統高貴且能操控巨龍',bonus:'知識與外貌較高'},
+ snake:{name:'蛇之中東家',icon:'🐍',base:{knowledge:70,health:58,wealth:64,relation:50,beauty:68},trait:'善使毒藥，天生對毒素免疫',bonus:'毒殺事件成功率較高'},
+ flower:{name:'花之妖靈家',icon:'🌸',base:{knowledge:46,health:52,wealth:58,relation:78,beauty:96},trait:'芬芳妖靈，男女皆為絕世之貌',bonus:'人際與外貌極高'},
+ eagle:{name:'鷹之天際家',icon:'🦅',base:{knowledge:64,health:66,wealth:60,relation:52,beauty:70},trait:'盤踞高處，能操控飛鳥為偵衛',bonus:'暗中陰謀較難得逞'},
+ tiger:{name:'虎之東方家',icon:'🐯',base:{knowledge:72,health:74,wealth:56,relation:48,beauty:66},trait:'東方亞裔血統，能通靈與操控魂魄',bonus:'生死與靈異事件較常對你有利'},
+ rabbit:{name:'兔之詛咒家',icon:'🐇',base:{knowledge:58,health:45,wealth:42,relation:55,beauty:80},trait:'外表柔弱，能施下惡毒詛咒',bonus:'外貌高、健康低、詛咒威力強'},
+ monster:{name:'海怪之海主家',icon:'🐙',base:{knowledge:50,health:84,wealth:72,relation:46,beauty:42},trait:'統帥海軍，水性超凡且能率領深海軍隊',bonus:'海上與健康加成'},
+ fox:{name:'狐之詭謎家',icon:'🦊',base:{knowledge:76,health:55,wealth:66,relation:68,beauty:76},trait:'聰明狡詐，難以馴服與預測',bonus:'交易與背叛成功率較高'},
+ goat:{name:'山羊之秘家',icon:'🐐',base:{knowledge:82,health:48,wealth:50,relation:40,beauty:58},trait:'神祕羔羊，可召喚惡魔與黑暗契約',bonus:'惡魔契約有機會改寫結局'}
+};
+const state={}; let timer=null, speed=0, selectedHouse='wolf';
+const names=['艾德','莉亞娜','凱撒','薇爾','羅伯','艾莎','席恩','瑪拉','布倫','約蘭','維斯','艾琳'];
+const $=id=>document.getElementById(id);
+
+function rand(a,b){return Math.floor(Math.random()*(b-a+1))+a}
+function clamp(v){return Math.max(0,Math.min(100,v))}
+function randomHouse(){const ids=Object.keys(HOUSE_TEMPLATES);return ids[rand(0,ids.length-1)]}
+function sign(v){return v>=0?'+'+v:v}
+
+function initHousePicker(){const picker=$('housePicker');picker.innerHTML='';Object.entries(HOUSE_TEMPLATES).forEach(([id,h])=>{const el=document.createElement('div');el.className='house-card'+(id===selectedHouse?' selected':'');el.innerHTML=`<div class="hs">${h.icon}</div><b>${h.name.replace(/之.+/,'之家')}</b>`;el.title=h.trait;el.onclick=()=>{selectedHouse=id;document.querySelectorAll('.house-card').forEach(x=>x.classList.remove('selected'));el.classList.add('selected')};picker.appendChild(el)});}
+
+function startGame(){
+ const houseId=selectedHouse, h=HOUSE_TEMPLATES[houseId];
+ const name=$('nameInput').value.trim()||names[rand(0,names.length-1)];
+ const legitimate=Math.random()<.68;
+ const siblings=rand(0,5); const stateCount=rand(35,95);
+ state.house=houseId;state.name=name;state.gender=$('genderInput').value;state.legitimate=legitimate;state.age=0;state.health=clamp(h.base.health+rand(-8,8));state.knowledge=clamp(h.base.knowledge+rand(-8,8));state.wealth=clamp(h.base.wealth+rand(-12,10));state.relation=clamp(h.base.relation+rand(-10,10));state.beauty=clamp(h.base.beauty+rand(-12,12));state.career='未成年';state.power=stateCount;state.kingPower=rand(25,85);state.alliances=[];state.siblings=siblings;state.married=false;state.children=0;state.alive=true;state.turn=0;state.legacy=[];state.acted=false;
+ state.houses={};Object.entries(HOUSE_TEMPLATES).forEach(([id,t])=>state.houses[id]={power:rand(20,88),relation:rand(-40,40)});state.houses[houseId].power=stateCount;
+ $('setupModal').classList.add('hidden');clearInterval(timer);timer=null;speed=0;updateSpeedButtons();render();showEvent('birth');saveGame(false);
+}
+
+function render(){
+ const h=HOUSE_TEMPLATES[state.house];$('portrait').textContent=h.icon;$('topSigil').textContent=h.icon;$('playerName').textContent=state.name;$('playerHouse').textContent=h.name;$('birthInfo').innerHTML=`${state.gender} · ${state.legitimate?'嫡子，具有繼承權':'私生子，無繼承權'}<br>兄弟姊妹：${state.siblings}人 · 職業：${state.career}`;$('agePill').textContent=`${state.age} 歲`;
+ $('stats').innerHTML=[['知識','knowledge'],['健康','health'],['財富','wealth'],['人際','relation'],['外貌','beauty']].map(([n,k])=>`<div class="stat"><span>${n}</span><div class="bar"><i style="width:${state[k]}%"></i></div><b>${state[k]}</b></div>`).join('');
+ const list=$('houseList');list.innerHTML='';Object.entries(HOUSE_TEMPLATES).forEach(([id,t])=>{const p=state.houses[id]?.power||0;const r=state.houses[id]?.relation||0;const el=document.createElement('div');el.className='house-row'+(id===state.house?' active':'');el.innerHTML=`<div class="mini">${t.icon}</div><div>${t.name.replace(/之.+/,'之家')}<div class="power"><i style="width:${p}%"></i></div></div><b>${p}</b>`;el.title=`勢力 ${p} · 與你關係 ${r>0?'友善':r<0?'敵對':'中立'}`;list.appendChild(el)});
+}
+
+function addLog(text){state.legacy.unshift(`<b>${state.age}歲</b> ${text}`);if(state.legacy.length>40)state.legacy.pop();$('log').innerHTML=state.legacy.map(x=>`<div class="log-item">${x}</div>`).join('')}
+function showEvent(type){
+ const story=$('story');$('continueBtn').classList.add('hidden');
+ if(type==='birth'){story.innerHTML=`<div class="event-icon">${HOUSE_TEMPLATES[state.house].icon}</div><h2>${state.legitimate?'血脈降臨':'私生子的黎明'}</h2><p>${state.name}出生於${HOUSE_TEMPLATES[state.house].name}。你是一名${state.legitimate?'嫡出子嗣，受教於家族的名門規矩':'私生子，沒有繼承權卻仍被命運注視'}。你有${state.siblings}名兄弟姊妹，而王座的主人已經倒下。</p><div class="choices"><button class="choice" onclick="startChildhood()">迎接童年<small>從零歲開始，體驗一年一歲的人生</small></button></div>`;}
+ else if(type==='career'){story.innerHTML=`<div class="event-icon">⚔</div><h2>十八歲：抉擇一生的身份</h2><p>成年禮即將結束。家族允許你選擇道路，但身分與能力將限制能走得多遠。</p><div class="choices">${careerChoices()}</div>`;}
+ else if(type==='marriage'){story.innerHTML=`<div class="event-icon">💍</div><h2>有人在家族宴會中向你致意</h2><p>婚姻是權力的契約，也是人生的支點。你願意接受一場政治聯姻嗎？</p><div class="choices"><button class="choice" onclick="marryChoice(true)">接受聯姻<small>人際提升，建立盟友；亦可能是陷阱</small></button><button class="choice" onclick="marryChoice(false)">婉拒婚約<small>保留自由，家族聲望可能降低</small></button></div>`;}
+ else if(type==='end'){return};
+}
+
+function careerChoices(){const c=[{n:'家主',icon:'♛',ok:state.legitimate&&state.relation>=45,req:'嫡子且人際45+'},{n:'殺手',icon:'🗡',ok:state.knowledge>=55||HOUSE_TEMPLATES[state.house].name.includes('蛇'),req:'知識55+或蛇家血脈'},{n:'臣子',icon:'📜',ok:state.knowledge>=40&&state.relation>=40,req:'知識與人際均40+'},{n:'士兵',icon:'⚔',ok:state.health>=55,req:'健康55+'},{n:'王妃',icon:'👑',ok:state.age>=18&&state.beauty>=50,req:'年滿18且外貌50+'}];return c.map(x=>`<button class="choice" ${x.ok?'':'disabled'} onclick="chooseCareer('${x.n}')"><span>${x.icon} ${x.n}</span><small>${x.req}${x.ok?' · 可選擇':' · 條件不足'}</small></button>`).join('')}
+function chooseCareer(c){state.career=c;if(c==='家主'){state.wealth+=12;state.relation+=8}else if(c==='殺手'){state.knowledge+=10;state.health+=4}else if(c==='臣子'){state.knowledge+=12;state.relation+=8}else if(c==='士兵'){state.health+=12;state.relation+=4}else{state.relation+=12;state.beauty+=8}Object.keys(state).filter(k=>['health','knowledge','wealth','relation','beauty'].includes(k)).forEach(k=>state[k]=clamp(state[k]));addLog(`在成年禮上選擇成為${c}。`);render();continueLife()}
+
+function startChildhood(){continueLife()}
+function continueLife(){if(!state.alive)return;timer=null;speed>0?startTimer():showNextYear();}
+
+function startTimer(){clearInterval(timer);if(speed===0)return;const ms={1:1000,2:500,5:200}[speed];timer=setInterval(showNextYear,ms)}
+function stopTimer(){clearInterval(timer);timer=null;speed=0;updateSpeedButtons()}
+function updateSpeedButtons(){document.querySelectorAll('.speed button').forEach(b=>b.classList.toggle('active',Number(b.dataset.speed)===speed))}
+
+document.querySelectorAll('.speed button').forEach(b=>b.onclick=()=>{speed=Number(b.dataset.speed);updateSpeedButtons();clearInterval(timer);timer=null;if(speed>0&&state.alive)startTimer();else if(speed===0&&state.alive){stopTimer();showNextYear()}});
+
+function showNextYear(){
+ if(!state.alive)return;if(state.age===18&&state.career==='未成年'){clearInterval(timer);showEvent('career');return}
+ if(state.age>=80&&Math.random()<Math.min(.18,(state.age-79)*.012)){die('時光耗盡，安詳地在家族祠堂中離世');return}
+ state.age++;state.turn++;
+ const lifeMod=rand(-2,2);state.health=clamp(state.health+lifeMod);state.knowledge=clamp(state.knowledge+(state.age<25?rand(0,2):rand(-1,1)));state.wealth=clamp(state.wealth+rand(-2,2));
+ if(state.age===18&&!state.married&&Math.random()<.55){clearInterval(timer);showEvent('marriage');return}
+ if(Math.random()<.012||state.age>65&&Math.random()<.035){clearInterval(timer);randomDeath();return}
+ const chance=rand(1,100);let ev;
+ if(chance<=12)ev='undead';else if(chance<=24)ev='feast';else if(chance<=36)ev='court';else if(chance<=48)ev='battle';else if(chance<=60)ev='marriage';else if(chance<=72)ev='alliance';else if(chance<=84)ev='wealth';else ev='mystery';
+ randomEvent(ev);
+ render();if(state.age>=90)randomEnd();
+}
+
+function randomEvent(ev){const story=$('story');let title='',text='',icon='';
+ if(ev==='undead'){icon='☠';title='活屍南侵';const severity=rand(1,100);text=`北方烽火連天，活屍軍團突襲一座邊境城鎮，強度為${severity}/100。城門在夜裡發出怪異撞擊聲。`;addLog(`活屍入侵，威脅等級${severity}。`);story.innerHTML=eventHTML(icon,title,text,[severity>65?[`率領軍隊迎戰`,`有勇無謀也許能挽救城民`,()=>{battleUndead(severity)}]:[`派兵支援北境`,`軍心與家族聲望可能提升`,()=>{battleUndead(severity)}],[`封鎖城門等待援軍`,`較安全，但人際可能受損`,()=>{closeGates()}],[`獻祭一名俘虜換取情報`,`只有年老的歷史會記得這筆交易`,()=>{darkDeal()}]]);}
+ else if(ev==='feast'){icon='🍷';title='宮廷盛宴';text='王座空懸之夜，十二家族齊聚宴席。一杯毒酒、一段流言，或一場新婚都可能改變局勢。';addLog('參加宮廷盛宴。');story.innerHTML=eventHTML(icon,title,text,[`與敵對家族談笑`,`人際可能提升或被試探`,()=>{socialEvent()}],[`向王宮貴族獻納珍寶`,`財富下降，聲望與盟友提升`,()=>{bribeCourt()}],[`藏於宴會長廊窺探陰謀`,`知識提升，健康或人際可能受損`,()=>{spyEvent()}]]);}
+ else if(ev==='court'){icon='📜';title='朝廷謁見';text='朝臣要求你表態：支持現任攝政，或提出新的繼承候選人。每個選擇都會留下歷史。';addLog('接受朝廷謁見。');story.innerHTML=eventHTML(icon,title,text,[`公開效忠攝政王`,`人際提升，獲得一點官場資源`,()=>{state.relation+=8;state.power+=5;yearResume('你跪在攝政王前，成為其公開盟友。')}],[`暗示自己有繼承資格`,`勢力提升，但容易樹敵`,()=>{state.power+=12;enemyRandom();yearResume('你開始讓朝臣思考王座是否也該有你的席位。')}],[`保持中立離席`,`安全但失去機會`,()=>{state.relation-=3;yearResume('你選擇沉默，沉默在宮廷中從不等於無形。')}]]);}
+ else if(ev==='battle'){icon='⚔';title='家族戰火';const enemy=randomHouse();text=`${HOUSE_TEMPLATES[enemy].name}與你在一座過境要塞發生衝突。軍旗在雨中飄動，沒有一個人確定誰先拔劍。`;addLog(`與${HOUSE_TEMPLATES[enemy].name}在要塞衝突。`);state._enemy=enemy;story.innerHTML=eventHTML(icon,title,text,[`親自領軍突擊`,`健康與勢力將受結果影響`,()=>{chargeBattle()}],[`發出金幣與糧草支援`,`財富下降，軍心可能提升`,()=>{supplyBattle()}],[`秘密聯絡敵方將領`,`可能成立緊急停戰或遭到背叛`,()=>{negotiateBattle()}]]);}
+ else if(ev==='marriage'&&state.age>=18&&!state.married){icon='💍';title='婚約來臨';text='一封由蠟封印的書信抵達。對方家族願意以婚姻換取你的忠誠，條件寫得像詩，內容卻像戰書。';addLog('收到婚姻與聯姻機會。');story.innerHTML=eventHTML(icon,title,text,[`接受聯姻`,`人際提升，可能增加盟友或仇敵`,()=>{marryChoice(true)}],[`拒絕並保持自由`,`避免束縛，家族聲望可能下降`,()=>{marryChoice(false)}]]);}
+ else if(ev==='alliance'){icon='🤝';title='盟約之手';const ally=randomHouse();text=`一名來自${HOUSE_TEMPLATES[ally].name}的使者帶來盟約。他的香水仍帶著異國的霧雨與血腥。`;addLog(`收到來自${HOUSE_TEMPLATES[ally].name}的盟約。`);state._ally=ally;story.innerHTML=eventHTML(icon,title,text,[`簽署血盟`,`獲得盟友，但可能遭到背叛`,()=>{makeAlliance()}],[`索取更多財寶才簽約`,`財富與關係將受到考驗`,()=>{allianceForPrice()}],[`拒絕並驅逐使者`,`關係惡化`,()=>{state.houses[ally].relation-=20;yearResume('使者在城門外折斷盟約卷軒，你們成為公開的敵人。')}]]);}
+ else if(ev==='wealth'){icon='⚖';title='家族經濟危機';text='糧倉與金庫的數字不相吻合。一位老臣的手抖得像冬天的樹枝，他只說出一半真相。';addLog('家族陷入經濟危機。');story.innerHTML=eventHTML(icon,title,text,[`公開追查帳目`,`知識提升，財富可能恢復',()=>{investigateAccount()}],[`向商人加稅`,`財富提升，人際下降',()=>{state.wealth+=10;state.relation-=8;yearResume('商隊仍然會來，只是再也不會帶任何笑容。')}],[`向龍家借貸`,`短期財富提升，日後債務會變成枷鎖',()=>{state.wealth+=16;state.legacy.push('從龍家借貸。');yearResume('借來的金幣閃著異光，利息卻以人命計算。')}]]);}
+ else{icon=['🕯','🦉','🌙','🗝'][rand(0,3)];title='命運的低語';text=['一位盲僧預言你會死在一場宴席中。','一名死者的影子在你房間裡停了一整夜。','你找到了一封預告王座更換的匿名信。','遠方傳來一頭巨龍落在雪中的聲音。'][rand(0,3)];addLog('遭遇一段神祕事件。');story.innerHTML=eventHTML(icon,title,text,[`追查真相`,`知識提升，可能觸怒秘密勢力`,()=>{state.knowledge+=8;state.relation-=4;yearResume('真相沒有名字，但它開始認出你。')}],[`裝作從未發現`,`安全度過未知之夜`,()=>{yearResume('你選擇閉上眼，命運便暫時繞過你的房門。')}],[`向山羊家求問惡魔契約`,`以未知代價改變未來',()=>{demonContract()}]]);}
+ render();
+}
+
+window.choiceHandlers=[];
+window.runChoice=function(index){if(window.choiceHandlers[index])window.choiceHandlers[index]()};
+function eventHTML(icon,title,text,choices){let html=`<div class="event-icon">${icon}</div><h2>${title}</h2><p>${text}</p><div class="choices">`;choices.forEach(c=>{const index=window.choiceHandlers.length;window.choiceHandlers.push(c[2]);html+=`<button class="choice" onclick="runChoice(${index})">${c[0]}<small>${c[1]}</small></button>`});return html+'</div>'}
+
+function yearResume(text){addLog(text);render();state.age<18?normalResume(text):normalResume(text)}
+function normalResume(text){const story=$('story');story.innerHTML=`<div class="event-icon">◈</div><h2>命運繼續流動</h2><p>${text}</p><div class="choices"><button class="choice" onclick="resumeLife()">進入下一年<small>繼續你的人生</small></button></div>`;}
+function resumeLife(){if(timer){clearInterval(timer);timer=null}normalContinue()}
+function normalContinue(){render();if(speed>0)startTimer();else showNextYearSoon()}
+function showNextYearSoon(){setTimeout(()=>showNextYear(),350)}
+
+function clampStats(){['health','knowledge','wealth','relation','beauty'].forEach(k=>state[k]=clamp(state[k]))}
+function battleUndead(sev){clampStats();if(state.house==='wolf'||state.house==='tiger'||state.health>=65&&Math.random()*100>sev*.45){state.health-=rand(1,8);state.relation+=10;state.power+=12;yearResume('你守住了城門。活屍軍團退入北風，但城牆上的刻痕終生不滅。')}else{state.health-=rand(12,28);yearResume('你活著逃回家族，失去的城鎮與戰友再也沒有重返。')}}
+function closeGates(){state.relation-=8;state.wealth-=3;yearResume('城門緊閉。史書稱你冷酷，難民稱你救了城內的人。')}
+function darkDeal(){state.health-=rand(3,12);state.knowledge+=10;state.relation-=10;yearResume('那場交易換來活屍移動的秘密，代價是你再也無法安睡。')}
+function socialEvent(){state.relation+=rand(3,10);if(Math.random()<.18){enemyRandom();yearResume('你結識了一位貴族盟友，但另一位貴族認定你是叛徒。')}else yearResume('杯中美酒流過每一張笑臉，只有你看見有人藏起匕首。')}
+function bribeCourt(){state.wealth-=12;state.relation+=12;state.power+=5;yearResume('你的珍寶在王宮中閃耀，你的名字也因此被更多人記住。')}
+function spyEvent(){state.knowledge+=10;state.relation-=rand(3,8);yearResume('你聽見了一張價值萬金的秘密，卻也發現這秘密正在尋找你。')}
+function enemyRandom(){const ids=Object.keys(HOUSE_TEMPLATES).filter(x=>x!==state.house);const id=ids[rand(0,ids.length-1)];state.houses[id].relation-=rand(15,30);state.houses[id].power+=rand(-5,5)}
+function chargeBattle(){const chance=state.health/100+.12;if(Math.random()<chance){state.health-=rand(3,12);state.power+=14;state.relation+=5;yearResume('你的軍旗首先衝入要塞，勝利讓士兵願意為你赴死。')}else{state.health-=rand(20,45);state.power-=8;yearResume('突襲失敗。你從馬蹄與箭雨下爬回營帳，帶著永遠的傷痕。')}}
+function supplyBattle(){state.wealth-=12;state.relation+=10;state.power+=5;yearResume('糧車抵達前線，士兵在饑餓中向你高呼。')}
+function negotiateBattle(){if(Math.random()<.65){const h=state._enemy;state.houses[h].relation+=10;yearResume('敵方將領接受停戰。兩軍在雨中握手，沒有人相信這會持續多久。')}else{enemyRandom();state.health-=rand(5,15);yearResume('談判是陷阱。使者失蹤，敵軍在黎明前攻破外圍營地。')}}
+function marryChoice(ok){if(ok){state.married=true;state.relation+=10;state.children+=rand(0,2);const ally=randomHouse();state._ally=ally;state.houses[ally].relation+=35;state.alliances.push(ally);addLog(`與${HOUSE_TEMPLATES[ally].name}聯姻，訂下婚約。`);yearResume(`婚禮持續七日。你的婚姻將${HOUSE_TEMPLATES[ally].name}變成盟友，也帶來新的權力敵人。`)}else{state.relation-=10;yearResume('婚約在蠟封破裂的聲音中被退回。你的自由得以保留，代價則是家族失望。')}}
+function makeAlliance(){const ally=state._ally;if(!ally)return;if(Math.random()<.72||(HOUSE_TEMPLATES[state.house].name.includes('狐'))){state.houses[ally].relation+=40;state.alliances.push(ally);state.power+=8;yearResume(`${HOUSE_TEMPLATES[ally].name}與你成為盟友。血盟卷軸上，你們的名字被焚成相同的灰。`)}else{state.houses[ally].relation-=25;state.wealth-=5;yearResume('盟約反被對方利用。你失去金庫與名譽，成為一場精巧背叛中的棋子。')}}
+function allianceForPrice(){const ally=state._ally;state.wealth-=8;if(state.wealth>=0&&Math.random()<.75){state.houses[ally].relation+=25;state.alliances.push(ally);yearResume('對方接受你的代價，雙方成立昂貴但穩固的盟約。')}else{state.houses[ally].relation-=15;yearResume('對方認為你的討價還價是侮辱，盟約變成了敵意。')}}
+function investigateAccount(){if(state.knowledge>=55&&Math.random()<.7){state.wealth+=14;state.relation+=5;yearResume('你揭穿了偷竊金庫的老臣，家族財富重回正軌。')}else{state.wealth-=10;enemyRandom();yearResume('追查帳目的人全被解職。你的敵人知道你開始翻找真相。')}}
+function demonContract(){if(state.house==='goat'||state.house==='tiger'||state.knowledge>=75&&Math.random()<.5){state.knowledge+=12;state.health-=rand(5,15);state.power+=18;yearResume('山羊家長老替你召來惡魔。契約以你的一段記憶為代價，換取一條鐵王座之路。')}else{state.health-=rand(10,25);state.relation-=12;yearResume('召喚失敗，惡魔只留下污穢與譏笑。你付出的代價卻是真實。')}}
+
+function randomDeath(){const deaths=['在宴會中被毒酒奪命','墜落於無人知曉的古塔螺旋階梯','被自己的戰馬拖行至城門之外','在睡夢中遭冷箭穿透心臟','因海上風暴沉入沒有月光的深海','被活屍咬傷，三日後死而復生又成灰','與巨龍相撞墜亡於火山旁','被宮廷魔鏡中的黑影拖走','在決鬥中被斷劍穿胸','因誤食曼陀羅而在笑聲中停止呼吸','被判處斬首，最後只看見斧刃落下','在婚禮上因天花倒下','被詛咒纏身，在誦咒時活活枯萎','從高牆跌下，被自己的披風纏住','因政變被封於石棺之內','被巨熊撕裂於狩獵場','在寒冬失溫而死，手中握著最後一封信','被密室中的毒蜂群刺至全身腫黑','因王冠落下砸中頭顯，而非意外','被火龍噴出的龍息燒成灰燼'];die(deaths[rand(0,deaths.length-1)])}
+function die(cause){stopTimer();state.alive=false;clearInterval(timer);$('chapterTitle').textContent='人物終局';$('agePill').textContent=state.age+' 歲';let ending='';if(state.power>=95&&state.health>20&&Math.random()<.65){ending='你坐上鐵王座'}else if(state.age<=20&&state.legacy.length<=3){ending='你在命運完成前便已死去'}else if(state.house==='goat'||state.house==='rabbit'){ending='詛咒將你的人生化作傳說'}else if(state.married){ending='你的血脈與盟友仍在續寫時代'}else ending='你的名字被編入王朝史書';$('story').innerHTML=`<div class="result-box"><div class="ending">♰</div><h2>${ending}</h2><p>${state.name}，享年 ${state.age} 死因：${cause}。</p><p>職業：${state.career} · 最終勢力：${state.power} · 繼承權：${state.legitimate?'嫡子':'私生子'}</p><div class="choices"><button class="choice" onclick="location.reload()">重新降生於世<small>隨機選擇新的家族與命運</small></button></div></div>`;addLog(`終於在${state.age}歲死去：${cause}。`);render();saveGame(false)}
+
+function randomEnd(){const possible=['你坐上鐵王座，卻發現王座會在睡夢中改變位置。','你放棲王位，帶著少數書頁遠行。','你被活屍軍團推為守夜者之王。','你的家族背叛你，但你逃出城外建立新王國。','你成為十二家族共同承認的仲裁者。','巨龍選擇了你，你駕龍離開大陸。','你被封在冰與石的墳墓中，仍能夢見王座。'];die(possible[rand(0,possible.length-1)])}
+
+function saveGame(show=true){try{localStorage.setItem('ironThroneSagaSave',JSON.stringify(state));if(show)alert('人生進度已儲存於此瀏覽器')}catch(e){}}
+function loadGame(){try{const s=JSON.parse(localStorage.getItem('ironThroneSagaSave'));if(s&&s.name&&s.house){Object.assign(state,s);$('setupModal').classList.add('hidden');render();$('story').innerHTML=`<div class="event-icon">◈</div><h2>命運從中斷處恢復</h2><p>${state.name}已經活到${state.age}歲，正在等待下一個選擇。</p><div class="choices"><button class="choice" onclick="resumeLife()">繼續人生</button></div>`}}catch(e){}}
+
+$('startBtn').onclick=startGame;$('saveBtn').onclick=()=>saveGame(true);$('resetBtn').onclick=()=>{if(confirm('確定要重新降生並清除目前人生？'))location.reload()};
+initHousePicker();
+</script>
+</body>
+</html>
