@@ -11,11 +11,18 @@ function getCount() {
 }
 
 function incrementCount() {
-  const props = PropertiesService.getScriptProperties();
-  const current = getCount();
-  const next = current + 1;
-  props.setProperty('page_count', String(next));
-  return next;
+  const lock = LockService.getScriptLock();
+  lock.waitLock(10000);
+
+  try {
+    const props = PropertiesService.getScriptProperties();
+    const current = Number(props.getProperty('page_count') || '0');
+    const next = current + 1;
+    props.setProperty('page_count', String(next));
+    return next;
+  } finally {
+    lock.releaseLock();
+  }
 }
 
 function resetCount() {
