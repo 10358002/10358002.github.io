@@ -143,7 +143,7 @@ function randomEvent(ev){
   choices=[['與敵對家族談笑','人際 +3～+10；可能遭到試探或樹敵',()=>socialEvent()],['向王宮貴族獻納珍寶','財富 -12、家族財產 -8；人際 +12、家族勢力 +5',()=>bribeCourt()],['藏於宴會長廊窺探陰謀','知識 +10、健康或人際可能各 -3～-8',()=>spyEvent()]];
  }else if(ev==='court'){
   icon='朝';title='朝廷謁見';text='朝臣要求你表態：支持現任攝政，或提出新的繼承候選人。每個選擇都會留下歷史。';addLog('接受朝廷謁見。');
-  choices=[['公開效忠攝政王','人際 +8、家族勢力 +5；獲得官場資源',()=>{state.relation+=8;state.power+=5;yearResume('你跪在攝政王前，成為其公開盟友。')}],['暗示自己有繼承資格,'家族勢力 +12；可能降低敵對家族關係',()=>{state.power+=12;enemyRandom();yearResume('你開始讓朝臣思考王座是否也該有你的席位。')}],['保持中立離席','人際 -3；安全但失去機會',()=>{state.relation-=3;yearResume('你選擇沉默，沉默在宮廷中從不等於無形。')}]];
+  choices=[['公開效忠攝政王','人際 +8、家族勢力 +5；獲得官場資源',()=>{state.relation+=8;state.power+=5;yearResume('你跪在攝政王前，成為其公開盟友。')}],['暗示自己有繼承資格','家族勢力 +12；可能降低敵對家族關係',()=>{state.power+=12;enemyRandom();yearResume('你開始讓朝臣思考王座是否也該有你的席位。')}],['保持中立離席','人際 -3；安全但失去機會',()=>{state.relation-=3;yearResume('你選擇沉默，沉默在宮廷中從不等於無形。')}]];
  }else if(ev==='battle'){
   icon='戰';title='家族戰火';const enemy=randomHouse();text=`${HOUSE_TEMPLATES[enemy].name}與你在一座過境要塞發生衝突。軍旗在雨中飄動，沒有一個人確定誰先拔劍。`;addLog(`與${HOUSE_TEMPLATES[enemy].name}在要塞衝突。`);state._enemy=enemy;
   choices=[['親自領軍突擊','勝：健康 -3～-12、家族勢力 +14、人際 +5；敗：健康 -20～-45、家族勢力 -8',()=>chargeBattle()],['發出金幣與糧草支援','財富 -12、家族財產 -12；人際 +10、家族勢力 +5',()=>supplyBattle()],['秘密聯絡敵方將領','成功：敵對家族人際 +10；失敗：健康 -5～-15、敵對關係惡化',()=>negotiateBattle()]];
@@ -196,11 +196,8 @@ function die(cause){stopTimer();state.alive=false;clearInterval(timer);$('chapte
 function randomEnd(){const possible=['你坐上鐵王座，卻發現王座會在睡夢中改變位置。','你放棲王位，帶著少數書頁遠行。','你被活屍軍團推為守夜者之王。','你的家族背叛你，但你逃出城外建立新王國。','你成為十二家族共同承認的仲裁者。','巨龍選擇了你，你駕龍離開大陸。','你被封在冰與石的墳墓中，仍能夢見王座。'];die(possible[rand(0,possible.length-1)])}
 
 function saveGame(show=true){try{localStorage.setItem('ironThroneSagaSave',JSON.stringify(state));if(show)alert('人生進度已儲存於此瀏覽器')}catch(e){}}
-function loadGame(){try{const s=JSON.parse(localStorage.getItem('ironThroneSagaSave'));if(s&&s.name&&s.house){Object.assign(state,s);$('setupModal').classList.add('hidden');render();$('story').innerHTML=`<div class="event-icon">續</div><h2>命運從中斷處恢復</h2><p>${state.name}已經活到${state.age}歲，正在等待下一個選擇。</p><div class="choices"><button class="choice" onclick="resumeLife()">繼續人生</button></div>`;}else{alert('目前沒有可載入的存檔')}}catch(e){alert('存檔讀取失敗')}
+function loadGame(){try{const s=JSON.parse(localStorage.getItem('ironThroneSagaSave'));if(s&&s.name&&s.house){Object.assign(state,s);$('setupModal').classList.add('hidden');render();$('story').innerHTML=`<div class="event-icon">續</div><h2>命運從中斷處恢復</h2><p>${state.name}已經活到${state.age}歲，正在等待下一個選擇。</p><div class="choices"><button class="choice" onclick="resumeLife()">繼續人生</button></div>`;}else{alert('目前沒有可載入的存檔')}}catch(e){alert('存檔讀取失敗')}}
 $('startBtn').onclick=startGame;
 $('loadBtn').onclick=loadGame;
 $('saveBtn').onclick=()=>saveGame(true);
 $('resetBtn').onclick=()=>{if(confirm('確定要重新降生並清除目前人生？')){localStorage.removeItem('ironThroneSagaSave');location.reload()}};
-</script>
-</body>
-</html>
