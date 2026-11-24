@@ -483,6 +483,33 @@
       background: rgba(243, 182, 94, 0.2);
     }
 
+    .art-6 {
+      background: linear-gradient(180deg, #edf3e8 0%, #dae7d1 42%, #f2dcb2 43%, #d7ad66 100%);
+    }
+
+    .art-6 .counter {
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      transform: translate(-50%, -50%);
+      width: 230px;
+      height: 140px;
+      border-radius: 18px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.94), rgba(244,235,211,0.92));
+      border: 2px solid rgba(184, 138, 42, 0.35);
+      box-shadow: 0 12px 24px rgba(112, 91, 48, 0.14);
+      display: grid;
+      place-items: center;
+    }
+
+    .art-6 .counter::before {
+      content: "0 1 2 3 4 5 6";
+      font-size: 1.35rem;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      color: #8d6a2f;
+    }
+
     @media (max-width: 760px) {
       .topbar {
         flex-direction: column;
@@ -613,6 +640,24 @@
             <span>教育</span>
             <span>單字</span>
             <span>測驗</span>
+          </div>
+        </div>
+      </a>
+
+      <a class="card" href="./6/index.html">
+        <div class="thumb art-6">
+          <div class="mini-scene">
+            <div class="counter"></div>
+          </div>
+        </div>
+        <div class="card-inner">
+          <div class="meta">作品 6</div>
+          <h2>網站瀏覽計數器</h2>
+          <p>頁面載入時自動累加瀏覽次數，使用雲端後端保存資料並即時顯示最新計數。</p>
+          <div class="tags">
+            <span>計數</span>
+            <span>雲端</span>
+            <span>網頁</span>
           </div>
         </div>
       </a>
