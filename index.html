@@ -728,27 +728,24 @@
   </div>
 
   <script>
-    const MINI_COUNT_ENDPOINT = 'https://script.google.com/macros/s/AKfycbwKMqgKLMbppZjcA2fph-fE8ooycD7iJRLytI7td4GZc5BJ9_GdLOKfkOKwLWmQUxE/exec';
-
-    async function updateMiniVisitCount() {
+    function startMiniVisitCount() {
       const countEl = document.getElementById('miniVisitCount');
       if (!countEl) return;
 
-      try {
-        const nonce = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-        const response = await fetch(`${MINI_COUNT_ENDPOINT}?action=increment&nonce=${encodeURIComponent(nonce)}`, {
-          method: 'GET',
-          cache: 'no-store'
-        });
-        const data = JSON.parse(await response.text());
-        countEl.textContent = Number(data.count || 0);
-      } catch (error) {
-        countEl.textContent = 'ERR';
-        console.error('mini count error:', error);
-      }
+      let count = 0;
+      countEl.textContent = '0';
+
+      const timer = setInterval(() => {
+        count += 1;
+        countEl.textContent = String(count);
+
+        if (count >= 999999) {
+          clearInterval(timer);
+        }
+      }, 600);
     }
 
-    updateMiniVisitCount();
+    startMiniVisitCount();
   </script>
 </body>
 </html>
